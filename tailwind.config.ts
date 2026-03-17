@@ -47,7 +47,21 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        "surface-elevated": "hsl(var(--surface-elevated))",
+        "surface-alt": "hsl(var(--surface-alt))",
+        "green-primary": "hsl(var(--green-primary))",
+        "green-mid": "hsl(var(--green-mid))",
+        "green-light": "hsl(var(--green-light))",
+        "green-accent": "hsl(var(--green-accent))",
+        "green-muted": "hsl(var(--green-muted))",
+        "green-900": "hsl(var(--green-900))",
+        "green-700": "hsl(var(--green-700))",
+        "green-500": "hsl(var(--green-500))",
+        "ella-amber": "hsl(var(--amber))",
+        "ella-amber-light": "hsl(var(--amber-light))",
+        "ella-red": "hsl(var(--red))",
+        "ella-red-light": "hsl(var(--red-light))",
+        "ella-blue": "hsl(var(--blue))",
+        "ella-blue-light": "hsl(var(--blue-light))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -65,8 +79,8 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
+        sans: ["DM Sans", "Segoe UI", "system-ui", "sans-serif"],
+        mono: ["DM Mono", "monospace"],
       },
       keyframes: {
         "accordion-down": {

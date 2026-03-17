@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,53 +6,66 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 95%;
+    --background: 120 14% 96%;
+    --foreground: 120 30% 14%;
 
-    --card: 240 10% 6%;
-    --card-foreground: 0 0% 95%;
+    --card: 0 0% 100%;
+    --card-foreground: 120 30% 14%;
 
-    --popover: 240 10% 6%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 120 30% 14%;
 
-    --primary: 217.2 91.2% 59.8%;
+    --primary: 123 46% 34%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 12%;
-    --secondary-foreground: 0 0% 85%;
+    --secondary: 120 14% 94%;
+    --secondary-foreground: 120 18% 36%;
 
-    --muted: 240 5% 15%;
-    --muted-foreground: 240 5% 55%;
+    --muted: 120 10% 90%;
+    --muted-foreground: 120 13% 54%;
 
-    --accent: 142 70% 45%;
+    --accent: 145 100% 39%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5% 15%;
-    --input: 240 5% 15%;
-    --ring: 217.2 91.2% 59.8%;
+    --border: 120 20% 85%;
+    --input: 120 20% 85%;
+    --ring: 123 46% 34%;
 
     --radius: 0.75rem;
 
     /* Custom tokens */
-    --surface-elevated: 240 10% 8%;
-    --glow-primary: 217.2 91.2% 59.8%;
-    --glow-accent: 142 70% 45%;
-    --gradient-hero: linear-gradient(135deg, hsl(240 10% 3.9%), hsl(240 10% 8%));
-    --shadow-glow: 0 0 40px -10px hsl(217.2 91.2% 59.8% / 0.3);
-    --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.3), 0 0 0 1px hsl(240 5% 15%);
-    --bezier-brand: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --green-primary: 123 46% 34%;
+    --green-mid: 122 41% 45%;
+    --green-light: 123 43% 93%;
+    --green-accent: 145 100% 39%;
+    --green-muted: 123 34% 74%;
+    --green-900: 152 50% 17%;
+    --green-700: 152 54% 27%;
+    --green-500: 152 53% 40%;
 
-    --sidebar-background: 240 10% 5%;
-    --sidebar-foreground: 0 0% 85%;
-    --sidebar-primary: 217.2 91.2% 59.8%;
+    --surface-alt: 120 14% 95%;
+    --amber: 24 95% 49%;
+    --amber-light: 36 100% 94%;
+    --red: 0 69% 47%;
+    --red-light: 340 60% 94%;
+    --blue: 211 78% 42%;
+    --blue-light: 207 89% 94%;
+
+    --shadow-sm: 0 1px 3px rgba(46, 125, 50, 0.08);
+    --shadow-md: 0 4px 16px rgba(46, 125, 50, 0.10);
+    --shadow-lg: 0 8px 32px rgba(46, 125, 50, 0.13);
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 120 18% 36%;
+    --sidebar-primary: 123 46% 34%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 5% 12%;
-    --sidebar-accent-foreground: 0 0% 85%;
-    --sidebar-border: 240 5% 15%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 123 43% 93%;
+    --sidebar-accent-foreground: 123 46% 34%;
+    --sidebar-border: 120 20% 85%;
+    --sidebar-ring: 123 46% 34%;
   }
 }
 
@@ -63,12 +76,11 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
   }
 
-  /* Monospace utility */
   .font-mono {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'DM Mono', monospace;
   }
 }
 
@@ -78,20 +90,29 @@
   100% { background-position: 200% 0; }
 }
 
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px -5px hsl(var(--glow-primary) / 0.4); }
-  50% { box-shadow: 0 0 30px -5px hsl(var(--glow-primary) / 0.6); }
+@keyframes flutuar {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
 }
 
-@keyframes fade-up {
+@keyframes fadeUp {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-fade-up {
-  animation: fade-up 0.5s var(--bezier-brand) forwards;
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.4); }
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
+.animate-fade-up {
+  animation: fadeUp 0.4s ease both;
+}
+
+.animate-flutuar {
+  animation: flutuar 3s ease-in-out infinite;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s infinite;
 }
