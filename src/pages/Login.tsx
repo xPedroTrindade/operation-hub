@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, AlertCircle, CheckCircle2, Zap, Shield, BarChart3 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 type Mode = "login" | "register";
 
@@ -16,7 +15,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ msg: string; type: "error" | "ok" | "" }>({ msg: "", type: "" });
 
-  // Redirect if already logged in
   if (session) {
     navigate("/", { replace: true });
     return null;
@@ -50,191 +48,175 @@ export default function Login() {
     }
   };
 
-  const features = [
-    { icon: Zap, label: "Automação de OS em tempo real" },
-    { icon: Shield, label: "Sessão segura via Supabase Auth" },
-    { icon: BarChart3, label: "Dashboard de operações integrado" },
-  ];
-
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Left hero panel */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
-        className="hidden lg:flex lg:w-[55%] flex-col justify-between p-12 xl:p-16 relative overflow-hidden"
+    <div className="grid min-h-screen place-items-center p-6"
+      style={{
+        background: `
+          radial-gradient(circle at top left, rgba(49, 160, 106, 0.18), transparent 28%),
+          radial-gradient(circle at bottom right, rgba(31, 106, 70, 0.12), transparent 22%),
+          linear-gradient(135deg, #edf5ef 0%, #f8fbf9 55%, #eef4f0 100%)
+        `
+      }}
+    >
+      <main className="w-full max-w-[1080px] grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] overflow-hidden rounded-3xl shadow-[0_24px_60px_rgba(22,63,47,0.12)]"
+        style={{
+          background: "rgba(255,255,255,0.78)",
+          backdropFilter: "blur(16px)",
+          border: "1px solid rgba(255,255,255,0.7)",
+        }}
       >
-        {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-card via-background to-card" />
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 rounded-full bg-accent/5 blur-3xl" />
-
-        <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-8">
-            <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-            <span className="text-xs font-mono font-medium text-primary tracking-wider uppercase">ELLA OS</span>
-          </div>
-
-          <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight leading-[1.1] text-foreground">
-            Controle operacional
-            <br />
-            <span className="text-primary">inteligente.</span>
-          </h1>
-
-          <p className="mt-5 text-muted-foreground max-w-md leading-relaxed text-[15px]">
-            Sistema centralizado de automação para gestão de ordens de serviço,
-            lançamentos e análise de performance operacional.
-          </p>
-        </div>
-
-        <div className="relative z-10 space-y-4">
-          {features.map((f, i) => (
-            <motion.div
-              key={f.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 + i * 0.1, ease: [0.2, 0.8, 0.2, 1] }}
-              className="flex items-center gap-3 text-sm text-muted-foreground"
-            >
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-elevated border border-border">
-                <f.icon className="w-4 h-4 text-primary" />
-              </div>
-              {f.label}
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Right form panel */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
-          className="w-full max-w-[400px]"
+        {/* Hero panel */}
+        <section
+          className="hidden lg:flex flex-col justify-between p-14 relative overflow-hidden min-h-[640px]"
+          style={{
+            background: "linear-gradient(150deg, rgba(22,63,47,0.98), rgba(31,106,70,0.92))",
+            color: "#fff",
+          }}
         >
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-            <span className="text-xs font-mono font-medium text-primary tracking-wider uppercase">ELLA OS</span>
-          </div>
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.06), transparent 28%, rgba(0,0,0,0.18))" }}
+          />
 
-          {/* Tab switcher */}
-          <div className="flex gap-1 p-1 rounded-xl bg-card border border-border mb-8">
-            {(["login", "register"] as Mode[]).map((m) => (
-              <button
-                key={m}
-                onClick={() => { setMode(m); setStatus({ msg: "", type: "" }); }}
-                className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
-                  mode === m
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {m === "login" ? "Entrar" : "Cadastrar"}
-              </button>
-            ))}
-          </div>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={mode}
-              initial={{ opacity: 0, x: mode === "login" ? -10 : 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: mode === "login" ? 10 : -10 }}
-              transition={{ duration: 0.2 }}
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs uppercase tracking-widest"
+              style={{ background: "rgba(255,255,255,0.12)" }}
             >
-              <h2 className="text-2xl font-bold tracking-tight text-foreground">
-                {mode === "login" ? "Entrar no sistema" : "Criar acesso"}
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1.5 mb-6">
-                {mode === "login"
-                  ? "Use seu email e senha para acessar."
-                  : "Cadastre um usuário interno."}
-              </p>
+              ELLA OS <span className="opacity-80">Controle interno</span>
+            </div>
 
-              {/* Status */}
-              {status.msg && (
-                <motion.div
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex items-start gap-2 p-3 rounded-lg mb-5 text-sm font-medium ${
-                    status.type === "error"
-                      ? "bg-destructive/10 text-destructive border border-destructive/20"
-                      : "bg-accent/10 text-accent border border-accent/20"
-                  }`}
-                >
-                  {status.type === "error" ? <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /> : <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />}
-                  {status.msg}
-                </motion.div>
+            <h1 className="mt-6 text-[clamp(36px,4vw,56px)] font-extrabold leading-[0.95] tracking-tighter max-w-[420px]">
+              Acesse o sistema com segurança.
+            </h1>
+
+            <p className="mt-4 max-w-[420px] leading-relaxed text-[15px]" style={{ color: "rgba(255,255,255,0.82)" }}>
+              Cadastre um usuário para uso interno e entre no painel principal do sistema.
+              O acesso agora depende de autenticação válida no backend.
+            </p>
+          </div>
+
+          <ul className="relative z-10 space-y-3 text-sm" style={{ color: "rgba(255,255,255,0.92)" }}>
+            <li className="flex items-center gap-2.5">
+              <span style={{ color: "#b7f0cd" }}>•</span> Login com sessão persistida no navegador
+            </li>
+            <li className="flex items-center gap-2.5">
+              <span style={{ color: "#b7f0cd" }}>•</span> Cadastro de novos usuários via Supabase
+            </li>
+            <li className="flex items-center gap-2.5">
+              <span style={{ color: "#b7f0cd" }}>•</span> Redirecionamento direto para a tela principal
+            </li>
+          </ul>
+        </section>
+
+        {/* Form panel */}
+        <section className="flex flex-col justify-center gap-5 p-9 bg-card">
+          {/* Tab switcher */}
+          <div className="inline-flex p-1 gap-1 rounded-full w-fit border border-border"
+            style={{ background: "hsl(120 14% 97%)" }}
+          >
+            <button
+              type="button"
+              onClick={() => { setMode("login"); setStatus({ msg: "", type: "" }); }}
+              className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                mode === "login"
+                  ? "bg-green-900 text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Entrar
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode("register"); setStatus({ msg: "", type: "" }); }}
+              className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                mode === "register"
+                  ? "bg-green-900 text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Cadastrar
+            </button>
+          </div>
+
+          <div>
+            <h2 className="text-[28px] font-bold tracking-tight text-foreground">
+              {mode === "login" ? "Entrar no sistema" : "Criar acesso"}
+            </h2>
+            <p className="text-muted-foreground mt-1 leading-relaxed">
+              {mode === "login"
+                ? "Use seu email e senha para abrir a tela principal."
+                : "Cadastre um usuário interno e inicie a sessão imediatamente."}
+            </p>
+          </div>
+
+          {/* Status */}
+          {status.msg && (
+            <div className={`text-[13px] font-semibold ${
+              status.type === "error" ? "text-destructive" : "text-green-700"
+            }`}>
+              {status.msg}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="grid gap-3.5">
+            {mode === "register" && (
+              <div className="grid gap-2">
+                <label className="text-[13px] font-semibold text-foreground">Nome</label>
+                <input
+                  type="text"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  required
+                  className="w-full px-4 py-3.5 rounded-[14px] border border-border bg-surface-alt text-sm text-foreground outline-none transition-all focus:border-green-500 focus:shadow-[0_0_0_4px_rgba(49,160,106,0.15)]"
+                  placeholder="Seu nome"
+                />
+              </div>
+            )}
+
+            <div className="grid gap-2">
+              <label className="text-[13px] font-semibold text-foreground">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoFocus
+                autoComplete="username"
+                className="w-full px-4 py-3.5 rounded-[14px] border border-border bg-surface-alt text-sm text-foreground outline-none transition-all focus:border-green-500 focus:shadow-[0_0_0_4px_rgba(49,160,106,0.15)]"
+                placeholder="seu@email.com"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <label className="text-[13px] font-semibold text-foreground">Senha</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                className="w-full px-4 py-3.5 rounded-[14px] border border-border bg-surface-alt text-sm text-foreground outline-none transition-all focus:border-green-500 focus:shadow-[0_0_0_4px_rgba(49,160,106,0.15)]"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="py-3.5 px-5 rounded-[14px] text-[15px] font-bold text-primary-foreground cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              style={{ background: "linear-gradient(135deg, hsl(152 50% 17%), hsl(152 54% 27%))" }}
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : mode === "login" ? (
+                "Entrar e abrir o sistema"
+              ) : (
+                "Cadastrar e entrar"
               )}
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {mode === "register" && (
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nome</label>
-                    <input
-                      type="text"
-                      value={nome}
-                      onChange={(e) => setNome(e.target.value)}
-                      required
-                      className="w-full px-4 py-3 rounded-lg bg-card border border-border text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all"
-                      placeholder="Seu nome"
-                    />
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoFocus
-                    autoComplete="username"
-                    className="w-full px-4 py-3 rounded-lg bg-card border border-border text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all"
-                    placeholder="seu@email.com"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Senha</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    autoComplete={mode === "login" ? "current-password" : "new-password"}
-                    className="w-full px-4 py-3 rounded-lg bg-card border border-border text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all"
-                    placeholder="••••••••"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : mode === "login" ? (
-                    "Entrar"
-                  ) : (
-                    "Cadastrar"
-                  )}
-                </button>
-              </form>
-            </motion.div>
-          </AnimatePresence>
-
-          <p className="text-[11px] text-muted-foreground/50 text-center mt-8 font-mono">
-            ELLA OS v1.0 · Controle interno
-          </p>
-        </motion.div>
-      </div>
+            </button>
+          </form>
+        </section>
+      </main>
     </div>
   );
 }
