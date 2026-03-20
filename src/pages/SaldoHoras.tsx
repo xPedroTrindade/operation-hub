@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import AppLayout from "@/components/AppLayout";
-import { fetchClientes, Cliente } from "@/services/api";
+import { fetchClientes, consultarSaldoMultiplo, fetchCache, Cliente, SaldoResult } from "@/services/api";
 
 interface SaldoRow {
   cliente: string;
@@ -13,6 +13,19 @@ interface SaldoRow {
   dataNegociacao: string;
 }
 
+function resultToRow(empresa: string, r: SaldoResult): SaldoRow {
+  return {
+    cliente: empresa,
+    codigo: r.codigo || "",
+    hrsAlocadas: r.hrs_alocadas || "",
+    hrsConsumidas: r.hrs_consumidas || "",
+    saldo: r.saldo_horas || "",
+    tipoOperacao: r.tipo_operacao || "",
+    tipo: r.tipo || "",
+    dataNegociacao: r.data_mais_recente || "",
+  };
+}
+
 export default function SaldoHoras() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [selectedEmpresas, setSelectedEmpresas] = useState<Set<string>>(new Set());
@@ -22,9 +35,22 @@ export default function SaldoHoras() {
   const [loadingClientes, setLoadingClientes] = useState(true);
 
   useEffect(() => {
-    fetchClientes()
-      .then((data) => {
-        setClientes(data.filter((c) => c.ativo));
+    Promise.all([fetchClientes(), fetchCache().catch(() => ({}))])
+      .then(([data, cache]) => {
+        const ativos = data.filter((c) => c.ativo);
+        setClientes(ativos);
+
+        // Pre-fill from cache
+        const rows: SaldoRow[] = [];
+        for (const [empresa, resultado] of Object.entries(cache as Record<string, SaldoResult>)) {
+          if (resultado.codigo) {
+            rows.push(resultToRow(empresa, resultado));
+          }
+        }
+        if (rows.length) {
+          setSaldos(rows);
+          setStatus(`${rows.length} registros do cache.`);
+        }
       })
       .catch((err) => {
         console.error(err);
@@ -61,47 +87,22 @@ export default function SaldoHoras() {
 
     try {
       const empresasList = Array.from(selectedEmpresas);
-      const clientesFiltrados = clientes.filter((c) => empresasList.includes(c.empresa));
+      const result = await consultarSaldoMultiplo(empresasList);
 
-      // Fetch pedidos for each selected company
-      const results: SaldoRow[] = [];
-      for (const cliente of clientesFiltrados) {
-        const urlPedidos = cliente.experience_url_pedidos || cliente.experience_url_etapas.replace("screen=etapas", "screen=pedidos");
-        // The actual fetching would happen via the backend API
-        // For now showing the structure
-        try {
-          const resp = await fetch(
-            `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/pedidos?empresa=${encodeURIComponent(cliente.empresa)}`
-          );
-          if (resp.ok) {
-            const data = await resp.json();
-            (data.pedidos || []).forEach((p: any) => {
-              results.push({
-                cliente: cliente.empresa,
-                codigo: p.codigo || "",
-                hrsAlocadas: p.hrs_alocadas || "",
-                hrsConsumidas: p.hrs_consumidas || "",
-                saldo: p.saldo || "",
-                tipoOperacao: p.tipo_operacao || "",
-                tipo: p.tipo || "",
-                dataNegociacao: p.data_negociacao || "",
-              });
-            });
-          }
-        } catch {
-          // Individual company error, continue
-        }
+      const rows: SaldoRow[] = [];
+      for (const [empresa, resultado] of Object.entries(result.dados)) {
+        rows.push(resultToRow(empresa, resultado));
       }
 
-      setSaldos(results);
-      setStatus(results.length ? `${results.length} registros encontrados.` : "Nenhum registro encontrado.");
+      setSaldos(rows);
+      setStatus(rows.length ? `${rows.length} registros encontrados.` : "Nenhum registro encontrado.");
     } catch (err) {
       console.error(err);
       setStatus("Erro ao consultar saldos.");
     } finally {
       setLoading(false);
     }
-  }, [selectedEmpresas, clientes]);
+  }, [selectedEmpresas]);
 
   return (
     <AppLayout title="Saldo de Horas – FAP" subtitle="Análise automática de pedidos">
