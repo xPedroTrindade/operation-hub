@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import AppLayout from "@/components/AppLayout";
 import { fetchAbas, fetchOS, fetchClientes, executarAutomacao, Cliente } from "@/services/api";
+import { Rocket, Search, Filter, ChevronDown, Loader2, Inbox } from "lucide-react";
 
 type OSRow = Record<string, string>;
 
@@ -15,7 +16,6 @@ export default function AutomacaoOS() {
   const [loading, setLoading] = useState(true);
   const [executing, setExecuting] = useState(false);
 
-  // Filter menu state
   const [filtroAberto, setFiltroAberto] = useState<string | null>(null);
   const [filtroTempSelecao, setFiltroTempSelecao] = useState<string[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -50,17 +50,13 @@ export default function AutomacaoOS() {
       setFiltrosColuna({});
     } catch (err) {
       console.error(err);
-      alert("Erro ao carregar dados.");
     } finally {
       setLoading(false);
     }
   }, [abas.length]);
 
-  useEffect(() => {
-    carregarDados();
-  }, []);
+  useEffect(() => { carregarDados(); }, []);
 
-  // Close filter menu on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -71,19 +67,15 @@ export default function AutomacaoOS() {
     return () => document.removeEventListener("click", handler);
   }, []);
 
-  // Apply filters
-  const dadosFiltrados = dados.filter((linha) => {
-    return Object.entries(filtrosColuna).every(([col, valores]) =>
+  const dadosFiltrados = dados.filter((linha) =>
+    Object.entries(filtrosColuna).every(([col, valores]) =>
       valores.includes(String(linha[col] ?? ""))
-    );
-  });
+    )
+  );
 
   const handleExecutar = async () => {
     const linhasSelecionadas = dadosFiltrados.filter((_, i) => selectedRows.has(i));
-    if (!linhasSelecionadas.length) {
-      alert("Selecione ao menos uma linha pendente.");
-      return;
-    }
+    if (!linhasSelecionadas.length) return;
 
     setExecuting(true);
     try {
@@ -91,7 +83,6 @@ export default function AutomacaoOS() {
         const empresaKey = linha["cliente"]?.toLowerCase();
         const experience_url_etapas = clientesMap[empresaKey];
         if (!experience_url_etapas) throw new Error(`Empresa "${linha["cliente"]}" não cadastrada.`);
-
         return {
           aba: abaAtual,
           empresa: linha["cliente"],
@@ -125,11 +116,11 @@ export default function AutomacaoOS() {
     });
   };
 
-  const getStatusClass = (valor: string) => {
+  const getStatusBadge = (valor: string) => {
     const v = valor.trim().toLowerCase();
-    if (v === "pendente") return "bg-ella-amber-light text-ella-amber";
-    if (/lan.*ada/.test(v) || v.includes("apontada")) return "bg-green-light text-primary";
-    if (v === "erro") return "bg-ella-red-light text-ella-red";
+    if (v === "pendente") return "bg-[hsl(var(--amber-light))] text-[hsl(var(--amber))]";
+    if (/lan.*ada/.test(v) || v.includes("apontada")) return "bg-[hsl(var(--green-light))] text-primary";
+    if (v === "erro") return "bg-[hsl(var(--red-light))] text-destructive";
     return "";
   };
 
@@ -157,16 +148,16 @@ export default function AutomacaoOS() {
 
   return (
     <AppLayout title="Controle de OS" subtitle={`Aba ativa: ${abaAtual}`}>
-      {/* Aba buttons */}
-      <section className="bg-card border border-border rounded-xl p-4 shadow-[var(--shadow-sm)] flex flex-wrap items-center gap-2">
+      {/* Tabs */}
+      <section className="bg-card border border-border rounded-xl p-3 shadow-[var(--shadow-sm)] flex flex-wrap items-center gap-1.5">
         {abas.map((aba) => (
           <button
             key={aba}
             onClick={() => carregarDados(aba)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
               aba === abaAtual
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-secondary-foreground hover:bg-green-light"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
             {aba}
@@ -175,20 +166,27 @@ export default function AutomacaoOS() {
       </section>
 
       {/* Actions */}
-      <section className="bg-card border border-border rounded-xl p-4 shadow-[var(--shadow-sm)] flex flex-wrap gap-3">
+      <section className="bg-card border border-border rounded-xl p-3 shadow-[var(--shadow-sm)] flex flex-wrap items-center gap-2">
         <button
           onClick={handleExecutar}
           disabled={executing || selectedRows.size === 0}
-          className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-semibold text-xs hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
-          {executing ? "Executando..." : "🚀 Executar lançamentos"}
+          {executing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
+          {executing ? "Executando..." : "Executar lançamentos"}
         </button>
         <button
           onClick={() => window.open("/saldo-horas", "_self")}
-          className="px-4 py-2.5 rounded-lg bg-secondary text-secondary-foreground font-medium text-sm hover:bg-green-light transition-all"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary text-secondary-foreground font-medium text-xs hover:bg-[hsl(var(--green-light))] transition-all"
         >
-          🔎 Saldo de horas
+          <Search className="h-3.5 w-3.5" />
+          Saldo de horas
         </button>
+        {selectedRows.size > 0 && (
+          <span className="text-[11px] text-muted-foreground font-mono ml-auto">
+            {selectedRows.size} selecionada{selectedRows.size > 1 ? "s" : ""}
+          </span>
+        )}
       </section>
 
       {/* Table */}
@@ -197,45 +195,49 @@ export default function AutomacaoOS() {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border bg-secondary/50">
-                <th className="p-3 w-10"></th>
+                <th className="p-3 w-10" />
                 {colunasFixas.map((col) => (
-                  <th key={col} className="p-3 text-left font-semibold text-muted-foreground whitespace-nowrap relative">
-                    <span>{col}</span>
-                    <button
-                      onClick={(e) => abrirFiltro(col, e)}
-                      className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded transition-all ${
-                        filtrosColuna[col]
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-secondary"
-                      }`}
-                    >
-                      🔽
-                    </button>
+                  <th key={col} className="p-3 text-left font-semibold text-muted-foreground whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1">
+                      {col}
+                      <button
+                        onClick={(e) => abrirFiltro(col, e)}
+                        className={`p-0.5 rounded transition-all ${
+                          filtrosColuna[col]
+                            ? "text-primary"
+                            : "text-muted-foreground/40 hover:text-muted-foreground"
+                        }`}
+                      >
+                        <Filter className="h-3 w-3" />
+                      </button>
+                    </span>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                Array.from({ length: 10 }).map((_, i) => (
+                Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i} className="border-b border-border">
                     <td className="p-3"><div className="w-4 h-4 rounded bg-muted animate-pulse" /></td>
-                    {Array.from({ length: 8 }).map((_, j) => (
+                    {Array.from({ length: 7 }).map((_, j) => (
                       <td key={j} className="p-3"><div className="w-20 h-3 rounded bg-muted animate-pulse" /></td>
                     ))}
                   </tr>
                 ))
               ) : dadosFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={colunasFixas.length + 1} className="p-8 text-center text-muted-foreground">
-                    Nenhum dado disponível
+                  <td colSpan={colunasFixas.length + 1} className="p-12 text-center text-muted-foreground">
+                    <div className="flex flex-col items-center gap-2">
+                      <Inbox className="h-8 w-8 text-muted-foreground/30" />
+                      <span>Nenhum dado disponível</span>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 dadosFiltrados.map((linha, i) => {
                   const statusExp = String(linha["Status experience"] || "").trim().toLowerCase();
                   const podeSelecionar = statusExp === "pendente";
-
                   return (
                     <tr key={i} className="border-b border-border hover:bg-muted/30 transition-colors">
                       <td className="p-3">
@@ -244,15 +246,16 @@ export default function AutomacaoOS() {
                           disabled={!podeSelecionar}
                           checked={selectedRows.has(i)}
                           onChange={() => toggleCheckbox(i)}
-                          className="accent-primary"
+                          className="accent-primary rounded"
                         />
                       </td>
                       {colunasFixas.map((col) => {
                         const valor = String(linha[col] ?? "");
+                        const badge = col === "Status experience" ? getStatusBadge(valor) : "";
                         return (
                           <td key={col} className="p-3 whitespace-nowrap" title={valor}>
-                            {col === "Status experience" && getStatusClass(valor) ? (
-                              <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${getStatusClass(valor)}`}>
+                            {badge ? (
+                              <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${badge}`}>
                                 {valor}
                               </span>
                             ) : (
@@ -270,7 +273,7 @@ export default function AutomacaoOS() {
         </div>
       </section>
 
-      {/* Filter menu (portal-like) */}
+      {/* Filter popover */}
       {filtroAberto && (
         <div
           ref={menuRef}
@@ -278,8 +281,11 @@ export default function AutomacaoOS() {
           style={{ top: "200px", left: "50%", transform: "translateX(-50%)" }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="text-xs font-semibold text-foreground mb-2">{filtroAberto}</div>
-          <div className="max-h-[200px] overflow-y-auto flex flex-col gap-1.5">
+          <div className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1.5">
+            <Filter className="h-3 w-3 text-primary" />
+            {filtroAberto}
+          </div>
+          <div className="max-h-[200px] overflow-y-auto flex flex-col gap-1">
             {[...new Set(dados.map((d) => String(d[filtroAberto] ?? "")))].sort().map((v) => (
               <label key={v} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/50 px-2 py-1 rounded">
                 <input
@@ -289,24 +295,24 @@ export default function AutomacaoOS() {
                     if (e.target.checked) setFiltroTempSelecao((p) => [...p, v]);
                     else setFiltroTempSelecao((p) => p.filter((x) => x !== v));
                   }}
-                  className="accent-primary"
+                  className="accent-primary rounded"
                 />
                 {v || "(Em branco)"}
               </label>
             ))}
           </div>
-          <div className="flex gap-2 mt-3">
+          <div className="flex gap-2 mt-3 pt-2 border-t border-border">
             <button
               onClick={() => setFiltroTempSelecao([])}
-              className="px-3 py-1.5 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium"
+              className="flex-1 px-3 py-1.5 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-muted transition-all"
             >
               Limpar
             </button>
             <button
               onClick={aplicarFiltro}
-              className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold"
+              className="flex-1 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-all"
             >
-              OK
+              Aplicar
             </button>
           </div>
         </div>

@@ -1,23 +1,33 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import {
+  LayoutDashboard, Bot, Mail, BarChart3, Clock, Search,
+  Users, Settings, LogOut, CalendarDays, ChevronRight,
+} from "lucide-react";
 import { ReactNode } from "react";
+import { NavLink } from "@/components/NavLink";
+import {
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
+  SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  SidebarProvider, SidebarTrigger, useSidebar,
+} from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 
-const navItems = [
-  { label: "Dashboard", icon: "🏠", href: "/" },
+const mainItems = [
+  { label: "Dashboard", icon: LayoutDashboard, href: "/" },
 ];
 
 const toolItems = [
-  { label: "Automação de OS", icon: "🤖", href: "/automacao-os" },
-  { label: "Gerador de Email OS", icon: "📧", href: "/gerador-email" },
-  { label: "Status Report", icon: "📊", href: "/status-report" },
-  { label: "Análise de Horas", icon: "⏱️", href: "/analisador-horas" },
-  { label: "Saldo de Horas", icon: "🔎", href: "/saldo-horas" },
-  { label: "Status OS / consultor", icon: "📊", href: "/status-os-consultor" },
+  { label: "Automação de OS", icon: Bot, href: "/automacao-os" },
+  { label: "Gerador de Email", icon: Mail, href: "/gerador-email" },
+  { label: "Status Report", icon: BarChart3, href: "/status-report" },
+  { label: "Análise de Horas", icon: Clock, href: "/analisador-horas" },
+  { label: "Saldo de Horas", icon: Search, href: "/saldo-horas" },
+  { label: "Status Consultor", icon: Users, href: "/status-os-consultor" },
 ];
 
 const systemItems = [
-  { label: "Painel Admin", icon: "⚙️", href: "/admin" },
+  { label: "Painel Admin", icon: Settings, href: "/admin" },
 ];
 
 interface AppLayoutProps {
@@ -27,10 +37,76 @@ interface AppLayoutProps {
   headerExtra?: ReactNode;
 }
 
+function AppSidebar() {
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
+  const location = useLocation();
+
+  const isActive = (path: string) => location.pathname === path;
+
+  const renderGroup = (label: string, items: typeof mainItems) => (
+    <SidebarGroup>
+      <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[1.2px] text-sidebar-foreground/50 px-3">
+        {!collapsed && label}
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarMenuItem key={item.href}>
+              <SidebarMenuButton
+                asChild
+                isActive={isActive(item.href)}
+                tooltip={collapsed ? item.label : undefined}
+              >
+                <NavLink
+                  to={item.href}
+                  end
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  {!collapsed && <span>{item.label}</span>}
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+
+  return (
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+      <div className="px-4 py-5 flex items-center gap-2.5 border-b border-sidebar-border min-h-[68px]">
+        <div className="w-8 h-8 rounded-lg bg-sidebar-accent flex items-center justify-center shrink-0">
+          <Bot className="h-4.5 w-4.5 text-sidebar-primary" />
+        </div>
+        {!collapsed && (
+          <div className="overflow-hidden">
+            <strong className="block text-[14px] font-bold text-sidebar-primary tracking-tight leading-tight">ELLA OS</strong>
+            <span className="text-[10px] text-sidebar-foreground/50 tracking-wide leading-tight">Sankhya Bandeirantes</span>
+          </div>
+        )}
+      </div>
+
+      <SidebarContent className="py-2">
+        {renderGroup("Principal", mainItems)}
+        {renderGroup("Ferramentas", toolItems)}
+        {renderGroup("Sistema", systemItems)}
+      </SidebarContent>
+
+      {!collapsed && (
+        <div className="px-4 py-3 border-t border-sidebar-border">
+          <span className="text-[10px] text-sidebar-foreground/40 font-mono">v1.0 – Sankhya Experience</span>
+        </div>
+      )}
+    </Sidebar>
+  );
+}
+
 export default function AppLayout({ children, title, subtitle, headerExtra }: AppLayoutProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleSignOut = async () => {
     await signOut();
@@ -42,80 +118,47 @@ export default function AppLayout({ children, title, subtitle, headerExtra }: Ap
     weekday: "short", day: "2-digit", month: "short", year: "numeric",
   });
 
-  const renderNavSection = (items: typeof navItems) =>
-    items.map((item) => (
-      <a
-        key={item.href}
-        href={item.href}
-        onClick={(e) => { e.preventDefault(); navigate(item.href); }}
-        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
-          location.pathname === item.href
-            ? "bg-green-light text-primary font-semibold"
-            : "text-secondary-foreground hover:bg-green-light hover:text-primary"
-        }`}
-      >
-        <span className="text-[15px] w-5 text-center shrink-0">{item.icon}</span>
-        {item.label}
-      </a>
-    ));
-
   return (
-    <div className="flex min-h-screen bg-background text-foreground text-sm font-sans">
-      {/* Sidebar */}
-      <aside className="w-[230px] bg-card border-r border-border flex flex-col fixed top-0 left-0 h-screen z-[100] shadow-[var(--shadow-md)]">
-        <div className="px-5 py-[22px] border-b border-border flex items-center gap-2.5">
-          <div className="w-[34px] h-[34px] rounded-lg bg-green-light flex items-center justify-center text-lg">🤖</div>
-          <div>
-            <strong className="block text-[15px] font-bold text-primary tracking-tight">ELLA OS</strong>
-            <span className="text-[10px] text-muted-foreground tracking-wide">Sankhya Bandeirantes</span>
-          </div>
-        </div>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background text-foreground text-sm font-sans">
+        <AppSidebar />
 
-        <nav className="flex-1 py-3.5 px-2.5 flex flex-col gap-0.5 overflow-y-auto">
-          <div className="text-[10px] font-semibold uppercase tracking-[1px] text-muted-foreground px-2.5 py-2.5">Principal</div>
-          {renderNavSection(navItems)}
-
-          <div className="text-[10px] font-semibold uppercase tracking-[1px] text-muted-foreground px-2.5 pt-4 pb-1">Ferramentas</div>
-          {renderNavSection(toolItems)}
-
-          <div className="text-[10px] font-semibold uppercase tracking-[1px] text-muted-foreground px-2.5 pt-4 pb-1">Sistema</div>
-          {renderNavSection(systemItems)}
-        </nav>
-
-        <div className="px-5 py-3.5 border-t border-border text-[11px] text-muted-foreground">
-          v1.0 – Sankhya Experience
-        </div>
-      </aside>
-
-      {/* Main */}
-      <div className="ml-[230px] flex-1 flex flex-col">
-        {/* Topbar */}
-        <div className="h-[60px] bg-card border-b border-border flex items-center justify-between px-7 sticky top-0 z-50">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">{title}</h2>
-            <span className="text-xs text-muted-foreground block">{subtitle}</span>
-          </div>
-          <div className="flex items-center gap-2.5">
-            {headerExtra}
-            <span className="text-xs text-muted-foreground font-mono">{user?.email}</span>
-            <div className="text-xs text-muted-foreground font-mono bg-background px-2.5 py-1.5 rounded-md border border-border">
-              {dataFormatada}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Topbar */}
+          <header className="h-[56px] bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-50 shrink-0">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+              <Separator orientation="vertical" className="h-5" />
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold text-foreground truncate">{title}</h2>
+                <span className="text-[11px] text-muted-foreground block truncate">{subtitle}</span>
+              </div>
             </div>
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors ml-2"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              Sair
-            </button>
-          </div>
-        </div>
+            <div className="flex items-center gap-2">
+              {headerExtra}
+              <div className="hidden sm:flex items-center gap-2">
+                <span className="text-[11px] text-muted-foreground font-mono truncate max-w-[180px]">{user?.email}</span>
+                <div className="text-[11px] text-muted-foreground font-mono bg-background px-2 py-1 rounded-md border border-border flex items-center gap-1.5">
+                  <CalendarDays className="h-3 w-3" />
+                  {dataFormatada}
+                </div>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-destructive transition-colors ml-1 px-2 py-1.5 rounded-lg hover:bg-destructive/10"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sair</span>
+              </button>
+            </div>
+          </header>
 
-        {/* Content */}
-        <div className="flex-1 p-7 flex flex-col gap-5">
-          {children}
+          {/* Content */}
+          <main className="flex-1 p-4 lg:p-6 flex flex-col gap-4">
+            {children}
+          </main>
         </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

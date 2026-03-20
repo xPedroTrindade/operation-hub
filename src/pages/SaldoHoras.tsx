@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import AppLayout from "@/components/AppLayout";
 import { fetchClientes, consultarSaldoMultiplo, fetchCache, Cliente, SaldoResult } from "@/services/api";
+import { Search, CheckSquare, XSquare, Loader2, Inbox } from "lucide-react";
 
 interface SaldoRow {
   cliente: string;
@@ -39,13 +40,9 @@ export default function SaldoHoras() {
       .then(([data, cache]) => {
         const ativos = data.filter((c) => c.ativo);
         setClientes(ativos);
-
-        // Pre-fill from cache
         const rows: SaldoRow[] = [];
         for (const [empresa, resultado] of Object.entries(cache as Record<string, SaldoResult>)) {
-          if (resultado.codigo) {
-            rows.push(resultToRow(empresa, resultado));
-          }
+          if (resultado.codigo) rows.push(resultToRow(empresa, resultado));
         }
         if (rows.length) {
           setSaldos(rows);
@@ -68,32 +65,19 @@ export default function SaldoHoras() {
     });
   };
 
-  const selecionarTodas = () => {
-    setSelectedEmpresas(new Set(clientes.map((c) => c.empresa)));
-  };
-
-  const limpar = () => {
-    setSelectedEmpresas(new Set());
-  };
-
   const consultar = useCallback(async () => {
     if (selectedEmpresas.size === 0) {
       setStatus("Selecione ao menos uma empresa.");
       return;
     }
-
     setLoading(true);
     setStatus(`Consultando ${selectedEmpresas.size} empresa(s)...`);
-
     try {
-      const empresasList = Array.from(selectedEmpresas);
-      const result = await consultarSaldoMultiplo(empresasList);
-
+      const result = await consultarSaldoMultiplo(Array.from(selectedEmpresas));
       const rows: SaldoRow[] = [];
       for (const [empresa, resultado] of Object.entries(result.dados)) {
         rows.push(resultToRow(empresa, resultado));
       }
-
       setSaldos(rows);
       setStatus(rows.length ? `${rows.length} registros encontrados.` : "Nenhum registro encontrado.");
     } catch (err) {
@@ -105,7 +89,7 @@ export default function SaldoHoras() {
   }, [selectedEmpresas]);
 
   return (
-    <AppLayout title="Saldo de Horas – FAP" subtitle="Análise automática de pedidos">
+    <AppLayout title="Saldo de Horas" subtitle="Análise automática de pedidos – FAP">
       {/* Company selection */}
       <section className="bg-card border border-border rounded-xl p-5 shadow-[var(--shadow-sm)]">
         <h3 className="text-sm font-semibold text-foreground mb-3">Selecione as empresas</h3>
@@ -121,7 +105,7 @@ export default function SaldoHoras() {
                 key={c.empresa}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs cursor-pointer transition-all border ${
                   selectedEmpresas.has(c.empresa)
-                    ? "bg-green-light border-primary text-primary font-semibold"
+                    ? "bg-[hsl(var(--green-light))] border-primary text-primary font-semibold"
                     : "border-border hover:bg-muted/50"
                 }`}
               >
@@ -129,7 +113,7 @@ export default function SaldoHoras() {
                   type="checkbox"
                   checked={selectedEmpresas.has(c.empresa)}
                   onChange={() => toggleEmpresa(c.empresa)}
-                  className="accent-primary"
+                  className="accent-primary rounded"
                 />
                 {c.empresa}
               </label>
@@ -139,29 +123,32 @@ export default function SaldoHoras() {
 
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={selecionarTodas}
-            className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-green-light transition-all"
+            onClick={() => setSelectedEmpresas(new Set(clientes.map((c) => c.empresa)))}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-[hsl(var(--green-light))] transition-all"
           >
-            ✔ Selecionar Todas
+            <CheckSquare className="h-3.5 w-3.5" />
+            Selecionar Todas
           </button>
           <button
-            onClick={limpar}
-            className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-green-light transition-all"
+            onClick={() => setSelectedEmpresas(new Set())}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-[hsl(var(--green-light))] transition-all"
           >
-            ✖ Limpar
+            <XSquare className="h-3.5 w-3.5" />
+            Limpar
           </button>
           <button
             onClick={consultar}
             disabled={loading || selectedEmpresas.size === 0}
-            className="px-5 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            {loading ? "Consultando..." : "🔎 Consultar Selecionadas"}
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+            {loading ? "Consultando..." : "Consultar Selecionadas"}
           </button>
         </div>
       </section>
 
       {/* Status */}
-      <section className="bg-card border border-border rounded-xl p-4 shadow-[var(--shadow-sm)]">
+      <section className="bg-card border border-border rounded-xl p-3 shadow-[var(--shadow-sm)]">
         <div className="text-xs text-muted-foreground">{status}</div>
       </section>
 
@@ -171,34 +158,32 @@ export default function SaldoHoras() {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border bg-secondary/50">
-                <th className="p-3 text-left font-semibold text-muted-foreground">Cliente</th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">Código</th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">Hrs Alocadas</th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">Hrs Consumidas</th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">Saldo</th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">Tipo Operação</th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">Tipo</th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">Data Negociação</th>
+                {["Cliente","Código","Hrs Alocadas","Hrs Consumidas","Saldo","Tipo Operação","Tipo","Data Negociação"].map((h) => (
+                  <th key={h} className="p-3 text-left font-semibold text-muted-foreground">{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {saldos.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-muted-foreground">
-                    {loading ? "Carregando..." : "Nenhum dado disponível ainda"}
+                  <td colSpan={8} className="p-12 text-center text-muted-foreground">
+                    <div className="flex flex-col items-center gap-2">
+                      <Inbox className="h-8 w-8 text-muted-foreground/30" />
+                      {loading ? "Carregando..." : "Nenhum dado disponível ainda"}
+                    </div>
                   </td>
                 </tr>
               ) : (
                 saldos.map((row, i) => (
                   <tr key={i} className="border-b border-border hover:bg-muted/30 transition-colors">
-                    <td className="p-3">{row.cliente}</td>
-                    <td className="p-3">{row.codigo}</td>
-                    <td className="p-3">{row.hrsAlocadas}</td>
-                    <td className="p-3">{row.hrsConsumidas}</td>
-                    <td className="p-3">{row.saldo}</td>
+                    <td className="p-3 font-medium">{row.cliente}</td>
+                    <td className="p-3 font-mono">{row.codigo}</td>
+                    <td className="p-3 font-mono">{row.hrsAlocadas}</td>
+                    <td className="p-3 font-mono">{row.hrsConsumidas}</td>
+                    <td className="p-3 font-mono font-semibold text-primary">{row.saldo}</td>
                     <td className="p-3">{row.tipoOperacao}</td>
                     <td className="p-3">{row.tipo}</td>
-                    <td className="p-3">{row.dataNegociacao}</td>
+                    <td className="p-3 font-mono">{row.dataNegociacao}</td>
                   </tr>
                 ))
               )}
