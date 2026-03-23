@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      configuracoes_gerais: {
+        Row: {
+          created_at: string
+          exp_senha: string | null
+          exp_url: string | null
+          exp_usuario: string | null
+          id: number
+          pdf_cabecalho: string | null
+          pdf_nome_empresa: string | null
+          pdf_rodape: string | null
+          smtp_de_nome: string | null
+          smtp_host: string | null
+          smtp_porta: number | null
+          smtp_senha: string | null
+          smtp_usar_tls: boolean | null
+          smtp_usuario: string | null
+          tenant_id: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exp_senha?: string | null
+          exp_url?: string | null
+          exp_usuario?: string | null
+          id?: number
+          pdf_cabecalho?: string | null
+          pdf_nome_empresa?: string | null
+          pdf_rodape?: string | null
+          smtp_de_nome?: string | null
+          smtp_host?: string | null
+          smtp_porta?: number | null
+          smtp_senha?: string | null
+          smtp_usar_tls?: boolean | null
+          smtp_usuario?: string | null
+          tenant_id?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exp_senha?: string | null
+          exp_url?: string | null
+          exp_usuario?: string | null
+          id?: number
+          pdf_cabecalho?: string | null
+          pdf_nome_empresa?: string | null
+          pdf_rodape?: string | null
+          smtp_de_nome?: string | null
+          smtp_host?: string | null
+          smtp_porta?: number | null
+          smtp_senha?: string | null
+          smtp_usar_tls?: boolean | null
+          smtp_usuario?: string | null
+          tenant_id?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -36,6 +93,33 @@ export type Database = {
           email?: string | null
           id?: string
           nome?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_module_access: {
+        Row: {
+          created_at: string
+          has_access: boolean
+          id: string
+          module_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          has_access?: boolean
+          id?: string
+          module_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          has_access?: boolean
+          id?: string
+          module_key?: string
           updated_at?: string
           user_id?: string
         }

@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import AutomacaoOS from "./pages/AutomacaoOS";
 import SaldoHoras from "./pages/SaldoHoras";
 import StatusReport from "./pages/StatusReport";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/automacao-os" element={<ProtectedRoute><AutomacaoOS /></ProtectedRoute>} />
             <Route path="/saldo-horas" element={<ProtectedRoute><SaldoHoras /></ProtectedRoute>} />
             <Route path="/status-report" element={<ProtectedRoute><StatusReport /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
