@@ -28,6 +28,7 @@ const App = () => (
             <Route path="/automacao-os" element={<ProtectedRoute><AutomacaoOS /></ProtectedRoute>} />
             <Route path="/saldo-horas" element={<ProtectedRoute><SaldoHoras /></ProtectedRoute>} />
             <Route path="/status-report" element={<ProtectedRoute><StatusReport /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
