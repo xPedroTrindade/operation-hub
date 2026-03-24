@@ -30,6 +30,29 @@ export interface Cliente {
   ativo: boolean;
 }
 
+// ── Clientes via Supabase (fonte canônica) ──
+export async function fetchClientesSupabase(): Promise<Cliente[]> {
+  const { data, error } = await supabase
+    .from("clientes")
+    .select("nome, ativo, configuracoes_clientes(url_abertura_os, url_saldo_horas)")
+    .eq("ativo", true)
+    .order("nome", { ascending: true });
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((c: any) => {
+    const cfg = Array.isArray(c.configuracoes_clientes)
+      ? c.configuracoes_clientes[0]
+      : c.configuracoes_clientes;
+    return {
+      empresa: c.nome,
+      experience_url_etapas: cfg?.url_abertura_os ?? "",
+      experience_url_pedidos: cfg?.url_saldo_horas ?? "",
+      ativo: c.ativo,
+    };
+  });
+}
+
 export interface OSData {
   dados: Record<string, string>[];
   aba: string;

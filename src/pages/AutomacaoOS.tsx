@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import AppLayout from "@/components/AppLayout";
-import { fetchAbas, fetchOS, fetchClientes, executarAutomacao, Cliente } from "@/services/api";
+import { fetchAbas, fetchOS, fetchClientesSupabase, executarAutomacao } from "@/services/api";
 import { Rocket, Search, Filter, ChevronDown, Loader2, Inbox } from "lucide-react";
 
 type OSRow = Record<string, string>;
@@ -26,7 +26,7 @@ export default function AutomacaoOS() {
     try {
       const [osData, clientes, abasData] = await Promise.all([
         fetchOS(aba),
-        fetchClientes(),
+        fetchClientesSupabase(),
         abas.length ? Promise.resolve(abas) : fetchAbas(),
       ]);
 
@@ -38,9 +38,12 @@ export default function AutomacaoOS() {
       setAbaAtual(osData.aba || aba || "");
       if (!abas.length) setAbas(abasData);
 
+      const normalizar = (s: string) =>
+        s.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
       const map: Record<string, string> = {};
       clientes.forEach((c) => {
-        if (c.ativo) map[c.empresa.toLowerCase()] = c.experience_url_etapas;
+        map[normalizar(c.empresa)] = c.experience_url_etapas;
       });
       setClientesMap(map);
 
@@ -79,10 +82,13 @@ export default function AutomacaoOS() {
 
     setExecuting(true);
     try {
+      const normalizar = (s: string) =>
+        (s || "").toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
       const payload = linhasSelecionadas.map((linha) => {
-        const empresaKey = linha["cliente"]?.toLowerCase();
+        const empresaKey = normalizar(linha["cliente"] ?? "");
         const experience_url_etapas = clientesMap[empresaKey];
-        if (!experience_url_etapas) throw new Error(`Empresa "${linha["cliente"]}" não cadastrada.`);
+        if (!experience_url_etapas) throw new Error(`Empresa "${linha["cliente"]}" não tem URL de abertura de OS configurada. Verifique o Painel Admin → Clientes.`);
         return {
           aba: abaAtual,
           empresa: linha["cliente"],

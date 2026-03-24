@@ -1,7 +1,9 @@
 ﻿from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
+import asyncio
 import copy
 import json
 import logging
@@ -19,7 +21,37 @@ from core.auth import create_session, get_session_user, register_user, authentic
 from core.automacao.saldoh import extrair_saldo_fap, extrair_saldo_fap_multiplo
 from core.automacao.sankhya import executar_fluxo_completo
 
-app = FastAPI()
+
+def _preload_sheets():
+    """Pré-carrega abas e aba atual do Google Sheets no cache ao iniciar."""
+    try:
+        logger.info("Preload: buscando abas do Google Sheets...")
+        sheet = get_sheets_service()
+        meta = sheet.get(
+            spreadsheetId=SPREADSHEET_ID,
+            fields="sheets(properties(title))",
+        ).execute()
+        abas = [reparar_texto_mojibake(s["properties"]["title"]) for s in meta["sheets"]]
+        salvar_abas_cache(abas)
+        logger.info("Preload: %d aba(s) cacheada(s): %s", len(abas), abas)
+
+        aba_alvo = NOME_ABA if NOME_ABA in abas else abas[0]
+        logger.info("Preload: lendo dados da aba '%s'...", aba_alvo)
+        dados = ler_planilha_api(aba_alvo)
+        salvar_os_cache(aba_alvo, dados)
+        logger.info("Preload: %d linha(s) cacheada(s) da aba '%s'.", len(dados), aba_alvo)
+    except Exception:
+        logger.exception("Preload falhou — servidor continua normalmente.")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(None, _preload_sheets)
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,7 +63,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 SPREADSHEET_ID = "12XtxBhWOq4wq5U_sRZ4ID46Bz0f2hHFNrKhbNe2H9RQ"
-NOME_ABA = "022026"
+NOME_ABA = "032026"
 NOME_COLUNA_STATUS = "Status experience"
 ABAS_CACHE_TTL_SECONDS = 300
 OS_CACHE_TTL_SECONDS = 90

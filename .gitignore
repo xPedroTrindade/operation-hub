@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Dados sensíveis do backend
+data/google_credentials.json
+data/users.json
+data/sessions.json

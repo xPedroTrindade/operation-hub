@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Bot, Mail, BarChart3, Clock, Search,
-  Users, Settings, LogOut, CalendarDays, ChevronRight,
+  Users, Settings, LogOut, CalendarDays, Building2,
 } from "lucide-react";
 import { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
@@ -24,6 +24,10 @@ const toolItems = [
   { label: "Análise de Horas", icon: Clock, href: "/analisador-horas" },
   { label: "Saldo de Horas", icon: Search, href: "/saldo-horas" },
   { label: "Status Consultor", icon: Users, href: "/status-os-consultor" },
+];
+
+const cadastroItems = [
+  { label: "Clientes", icon: Building2, href: "/clientes" },
 ];
 
 const systemItems = [
@@ -92,6 +96,7 @@ function AppSidebar() {
       <SidebarContent className="py-2">
         {renderGroup("Principal", mainItems)}
         {renderGroup("Ferramentas", toolItems)}
+        {renderGroup("Cadastros", cadastroItems)}
         {renderGroup("Sistema", systemItems)}
       </SidebarContent>
 
