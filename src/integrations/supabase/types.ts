@@ -14,6 +14,142 @@ export type Database = {
   }
   public: {
     Tables: {
+      apontamentos_os: {
+        Row: {
+          atualizado_em: string
+          cliente_id: string
+          config_id: string | null
+          criado_em: string
+          data_os: string
+          envio_id: string | null
+          executante: string
+          hora_fim: string
+          hora_inicio: string
+          horas_executadas: number
+          id: string
+          observacoes: string | null
+          status_os: string
+          tarefa: string
+          ticket: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          cliente_id: string
+          config_id?: string | null
+          criado_em?: string
+          data_os: string
+          envio_id?: string | null
+          executante: string
+          hora_fim: string
+          hora_inicio: string
+          horas_executadas: number
+          id?: string
+          observacoes?: string | null
+          status_os?: string
+          tarefa: string
+          ticket?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          cliente_id?: string
+          config_id?: string | null
+          criado_em?: string
+          data_os?: string
+          envio_id?: string | null
+          executante?: string
+          hora_fim?: string
+          hora_inicio?: string
+          horas_executadas?: number
+          id?: string
+          observacoes?: string | null
+          status_os?: string
+          tarefa?: string
+          ticket?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apontamentos_os_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clientes: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          cnpj: string | null
+          criado_em: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          cnpj?: string | null
+          criado_em?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          cnpj?: string | null
+          criado_em?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      configuracoes_clientes: {
+        Row: {
+          atualizado_em: string
+          cliente_id: string
+          criado_em: string
+          exp_senha: string
+          exp_usuario: string
+          id: string
+          obs: string
+          url_abertura_os: string
+          url_saldo_horas: string
+        }
+        Insert: {
+          atualizado_em?: string
+          cliente_id: string
+          criado_em?: string
+          exp_senha?: string
+          exp_usuario?: string
+          id?: string
+          obs?: string
+          url_abertura_os?: string
+          url_saldo_horas?: string
+        }
+        Update: {
+          atualizado_em?: string
+          cliente_id?: string
+          criado_em?: string
+          exp_senha?: string
+          exp_usuario?: string
+          id?: string
+          obs?: string
+          url_abertura_os?: string
+          url_saldo_horas?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuracoes_clientes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       configuracoes_gerais: {
         Row: {
           created_at: string
