@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Bot, Mail, BarChart3, Clock, Search,
-  Users, Settings, LogOut, CalendarDays, Building2,
+  Users, Settings, LogOut, CalendarDays, Building2, ClipboardList,
 } from "lucide-react";
 import { ReactNode } from "react";
 import { NavLink } from "@/components/NavLink";
@@ -19,6 +19,7 @@ const mainItems = [
 
 const toolItems = [
   { label: "Automação de OS", icon: Bot, href: "/automacao-os" },
+  { label: "Lançamento de OS", icon: ClipboardList, href: "/lancamento-os" },
   { label: "Gerador de Email", icon: Mail, href: "/gerador-email" },
   { label: "Status Report", icon: BarChart3, href: "/status-report" },
   { label: "Análise de Horas", icon: Clock, href: "/analisador-horas" },

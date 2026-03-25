@@ -692,8 +692,8 @@ def executar_automacao(payload: list = Body(...), current_user: dict = Depends(r
         logger.info("Execucao finalizada")
         return {
             "status": "Automacao executada",
-            "sucesso": len(resultado.get("sucesso", [])),
-            "falha": len(resultado.get("falha", [])),
+            "sucesso": resultado.get("sucesso", []),
+            "falha": resultado.get("falha", []),
         }
     except Exception as exc:
         logger.exception("Erro durante execucao")

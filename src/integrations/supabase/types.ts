@@ -14,6 +14,134 @@ export type Database = {
   }
   public: {
     Tables: {
+      apontamentos_os: {
+        Row: {
+          id: string
+          config_id: string | null
+          envio_id: string | null
+          usuario_id: string | null
+          executante: string
+          cliente_id: string
+          data_os: string
+          hora_inicio: string
+          hora_fim: string
+          ticket: string | null
+          tarefa: string
+          horas_executadas: number
+          status_os: string
+          observacoes: string | null
+          criado_em: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          config_id?: string | null
+          envio_id?: string | null
+          usuario_id?: string | null
+          executante: string
+          cliente_id: string
+          data_os: string
+          hora_inicio: string
+          hora_fim: string
+          ticket?: string | null
+          tarefa: string
+          horas_executadas: number
+          status_os?: string
+          observacoes?: string | null
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          config_id?: string | null
+          envio_id?: string | null
+          usuario_id?: string | null
+          executante?: string
+          cliente_id?: string
+          data_os?: string
+          hora_inicio?: string
+          hora_fim?: string
+          ticket?: string | null
+          tarefa?: string
+          horas_executadas?: number
+          status_os?: string
+          observacoes?: string | null
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      clientes: {
+        Row: {
+          id: string
+          nome: string
+          cnpj: string | null
+          ativo: boolean
+          criado_em: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          nome: string
+          cnpj?: string | null
+          ativo?: boolean
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          nome?: string
+          cnpj?: string | null
+          ativo?: boolean
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      configuracoes_clientes: {
+        Row: {
+          id: string
+          cliente_id: string
+          exp_usuario: string | null
+          exp_senha: string | null
+          url_abertura_os: string | null
+          url_saldo_horas: string | null
+          obs: string | null
+          criado_em: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          cliente_id: string
+          exp_usuario?: string | null
+          exp_senha?: string | null
+          url_abertura_os?: string | null
+          url_saldo_horas?: string | null
+          obs?: string | null
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          cliente_id?: string
+          exp_usuario?: string | null
+          exp_senha?: string | null
+          url_abertura_os?: string | null
+          url_saldo_horas?: string | null
+          obs?: string | null
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuracoes_clientes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: true
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       configuracoes_gerais: {
         Row: {
           created_at: string

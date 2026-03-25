@@ -12,6 +12,7 @@ import SaldoHoras from "./pages/SaldoHoras";
 import StatusReport from "./pages/StatusReport";
 import Admin from "./pages/Admin";
 import Clientes from "./pages/Clientes";
+import LancamentoOS from "./pages/LancamentoOS";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/status-report" element={<ProtectedRoute><StatusReport /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
+            <Route path="/lancamento-os" element={<ProtectedRoute><LancamentoOS /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
