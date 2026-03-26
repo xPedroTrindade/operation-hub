@@ -207,12 +207,73 @@ export type Database = {
         }
         Relationships: []
       }
+      logs: {
+        Row: {
+          criado_em: string
+          detalhe: string | null
+          execucao_id: string | null
+          id: string
+          mensagem: string
+          modulo: string
+          tipo: string
+          usuario_id: string | null
+        }
+        Insert: {
+          criado_em?: string
+          detalhe?: string | null
+          execucao_id?: string | null
+          id?: string
+          mensagem: string
+          modulo: string
+          tipo: string
+          usuario_id?: string | null
+        }
+        Update: {
+          criado_em?: string
+          detalhe?: string | null
+          execucao_id?: string | null
+          id?: string
+          mensagem?: string
+          modulo?: string
+          tipo?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
+      modelos_email: {
+        Row: {
+          assunto: string
+          ativo: boolean
+          atualizado_em: string
+          corpo: string
+          criado_em: string
+          id: number
+        }
+        Insert: {
+          assunto: string
+          ativo?: boolean
+          atualizado_em?: string
+          corpo: string
+          criado_em?: string
+          id?: number
+        }
+        Update: {
+          assunto?: string
+          ativo?: boolean
+          atualizado_em?: string
+          corpo?: string
+          criado_em?: string
+          id?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
           email: string | null
           id: string
           nome: string | null
+          role: string
           updated_at: string
           user_id: string
         }
@@ -221,6 +282,7 @@ export type Database = {
           email?: string | null
           id?: string
           nome?: string | null
+          role?: string
           updated_at?: string
           user_id: string
         }
@@ -229,10 +291,164 @@ export type Database = {
           email?: string | null
           id?: string
           nome?: string | null
+          role?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      sr_destinatarios: {
+        Row: {
+          ativo: boolean
+          config_id: string
+          email: string
+          id: string
+        }
+        Insert: {
+          ativo?: boolean
+          config_id: string
+          email: string
+          id?: string
+        }
+        Update: {
+          ativo?: boolean
+          config_id?: string
+          email?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sr_destinatarios_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "status_report_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sr_envio_destinatarios: {
+        Row: {
+          email: string
+          envio_id: string
+          id: string
+          status_entrega: string
+        }
+        Insert: {
+          email: string
+          envio_id: string
+          id?: string
+          status_entrega?: string
+        }
+        Update: {
+          email?: string
+          envio_id?: string
+          id?: string
+          status_entrega?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sr_envio_destinatarios_envio_id_fkey"
+            columns: ["envio_id"]
+            isOneToOne: false
+            referencedRelation: "sr_envios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sr_envios: {
+        Row: {
+          config_id: string
+          enviado_em: string
+          erro_msg: string | null
+          id: string
+          pdf_path: string | null
+          periodo_fim: string
+          periodo_inicio: string
+          status: string
+        }
+        Insert: {
+          config_id: string
+          enviado_em?: string
+          erro_msg?: string | null
+          id?: string
+          pdf_path?: string | null
+          periodo_fim: string
+          periodo_inicio: string
+          status?: string
+        }
+        Update: {
+          config_id?: string
+          enviado_em?: string
+          erro_msg?: string | null
+          id?: string
+          pdf_path?: string | null
+          periodo_fim?: string
+          periodo_inicio?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sr_envios_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "status_report_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      status_report_configs: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          cliente_id: string
+          criado_em: string
+          dia_envio: number
+          enviar_sem_os: boolean
+          fap: string | null
+          id: string
+          modelo_id: number | null
+          periodo: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          cliente_id: string
+          criado_em?: string
+          dia_envio: number
+          enviar_sem_os?: boolean
+          fap?: string | null
+          id?: string
+          modelo_id?: number | null
+          periodo?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          cliente_id?: string
+          criado_em?: string
+          dia_envio?: number
+          enviar_sem_os?: boolean
+          fap?: string | null
+          id?: string
+          modelo_id?: number | null
+          periodo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_report_configs_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "status_report_configs_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "modelos_email"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_module_access: {
         Row: {
@@ -266,7 +482,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
