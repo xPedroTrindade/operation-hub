@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import AppLayout from "@/components/AppLayout";
 import { fetchAbas, fetchOS, fetchClientesSupabase, executarAutomacao } from "@/services/api";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Rocket, Search, Filter, Loader2, Inbox,
   Terminal, X, CheckCircle2, XCircle, AlertCircle, ClipboardList,
@@ -8,17 +9,20 @@ import {
 
 type TipoLog = "sucesso" | "erro" | "aviso" | "info";
 interface LogEntry {
-  id: number;
+  id: string;
   tipo: TipoLog;
   mensagem: string;
   hora: string;
   detalhe?: string;
+  execucao_id: string | null;
+  criado_em: string;
 }
 
 interface ExecucaoResumo {
   sucesso: number;
   falha: number;
   hora: string;
+  execucao_id: string;
 }
 
 type OSRow = Record<string, string>;
@@ -37,12 +41,36 @@ export default function AutomacaoOS() {
 
   const [viewAtual, setViewAtual] = useState<ViewAtual>("os");
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
   const [ultimaExecucao, setUltimaExecucao] = useState<ExecucaoResumo | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
-  const addLog = useCallback((tipo: TipoLog, mensagem: string, detalhe?: string) => {
-    const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-    setLogs((prev) => [...prev, { id: Date.now() + Math.random(), tipo, mensagem, hora, detalhe }]);
+  // ── Carrega histórico de logs do banco ──
+  const carregarLogs = useCallback(async () => {
+    setLoadingLogs(true);
+    try {
+      const { data, error } = await supabase
+        .from("logs")
+        .select("*")
+        .eq("modulo", "automacao_os")
+        .order("criado_em", { ascending: false })
+        .limit(300);
+      if (error) throw error;
+      const entries: LogEntry[] = (data ?? []).map((r: any) => ({
+        id: r.id,
+        tipo: r.tipo as TipoLog,
+        mensagem: r.mensagem,
+        hora: new Date(r.criado_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        detalhe: r.detalhe ?? undefined,
+        execucao_id: r.execucao_id,
+        criado_em: r.criado_em,
+      }));
+      setLogs(entries);
+    } catch (err) {
+      console.error("Erro ao carregar logs:", err);
+    } finally {
+      setLoadingLogs(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -89,6 +117,11 @@ export default function AutomacaoOS() {
 
   useEffect(() => { carregarDados(); }, []);
 
+  // Carrega histórico ao abrir a aba de logs
+  useEffect(() => {
+    if (viewAtual === "logs") carregarLogs();
+  }, [viewAtual, carregarLogs]);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setFiltroAberto(null);
@@ -108,7 +141,27 @@ export default function AutomacaoOS() {
     if (!linhasSelecionadas.length) return;
 
     setExecuting(true);
-    addLog("info", `Automação iniciada — ${linhasSelecionadas.length} OS(s) selecionada(s)`);
+
+    // UUID único para agrupar todos os logs desta rodada
+    const execucao_id = crypto.randomUUID();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const usuario_id = user?.id ?? null;
+
+    const gravar = async (entries: { tipo: TipoLog; mensagem: string; detalhe?: string }[]) => {
+      await supabase.from("logs").insert(
+        entries.map((e) => ({
+          modulo: "automacao_os",
+          execucao_id,
+          tipo: e.tipo,
+          mensagem: e.mensagem,
+          detalhe: e.detalhe ?? null,
+          usuario_id,
+        }))
+      );
+    };
+
+    await gravar([{ tipo: "info", mensagem: `Automação iniciada — ${linhasSelecionadas.length} OS(s) selecionada(s)` }]);
 
     try {
       const normalizar = (s: string) =>
@@ -137,30 +190,29 @@ export default function AutomacaoOS() {
       const sucessos: any[] = res.sucesso ?? [];
       const falhas: any[] = res.falha ?? [];
 
-      sucessos.forEach((item) => {
-        addLog(
-          "sucesso",
-          `OS lançada — ${item.usuario} | ${item.empresa} | ${item.data} | ${item.hora_inicio}–${item.hora_fim} | Ticket: ${item.ticket ?? "–"}`,
-        );
-      });
+      const entradas = [
+        ...sucessos.map((item) => ({
+          tipo: "sucesso" as TipoLog,
+          mensagem: `OS lançada — ${item.usuario} | ${item.empresa} | ${item.data} | ${item.hora_inicio}–${item.hora_fim} | Ticket: ${item.ticket ?? "–"}`,
+        })),
+        ...falhas.map((item) => ({
+          tipo: "erro" as TipoLog,
+          mensagem: `Falha ao lançar — ${item.usuario} | ${item.empresa} | ${item.data} | Ticket: ${item.ticket ?? "–"}`,
+          detalhe: item.motivo ?? "Motivo não informado",
+        })),
+      ];
 
-      falhas.forEach((item) => {
-        addLog(
-          "erro",
-          `Falha ao lançar — ${item.usuario} | ${item.empresa} | ${item.data} | Ticket: ${item.ticket ?? "–"}`,
-          item.motivo ?? "Motivo não informado",
-        );
-      });
+      if (entradas.length) await gravar(entradas);
 
       const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-      setUltimaExecucao({ sucesso: sucessos.length, falha: falhas.length, hora });
+      setUltimaExecucao({ sucesso: sucessos.length, falha: falhas.length, hora, execucao_id });
 
-      // Muda para aba de logs automaticamente
+      await carregarLogs();
       setViewAtual("logs");
-
       carregarDados(abaAtual);
     } catch (err: any) {
-      addLog("erro", `Erro ao executar automação — ${err.message || "Erro desconhecido"}`);
+      await gravar([{ tipo: "erro", mensagem: `Erro ao executar automação — ${err.message || "Erro desconhecido"}` }]);
+      await carregarLogs();
       setViewAtual("logs");
     } finally {
       setExecuting(false);
@@ -413,24 +465,43 @@ export default function AutomacaoOS() {
           <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-muted/20">
             <div className="flex items-center gap-2">
               <Terminal className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold text-foreground">Eventos da sessão</span>
+              <span className="text-xs font-semibold text-foreground">Histórico de execuções</span>
               {logs.length > 0 && (
-                <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{logs.length}</span>
+                <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{logs.length} eventos</span>
               )}
             </div>
-            {logs.length > 0 && (
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => { setLogs([]); setUltimaExecucao(null); }}
-                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive transition-colors px-2 py-1 rounded hover:bg-destructive/10"
+                onClick={carregarLogs}
+                disabled={loadingLogs}
+                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-muted/60"
               >
-                <X className="h-3 w-3" /> Limpar
+                {loadingLogs ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
+                Atualizar
               </button>
-            )}
+              {logs.length > 0 && (
+                <button
+                  onClick={async () => {
+                    await supabase.from("logs").delete().eq("modulo", "automacao_os");
+                    setLogs([]);
+                    setUltimaExecucao(null);
+                  }}
+                  className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-destructive transition-colors px-2 py-1 rounded hover:bg-destructive/10"
+                >
+                  <X className="h-3 w-3" /> Limpar histórico
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Lista de logs */}
           <div className="overflow-y-auto max-h-[480px] font-mono">
-            {logs.length === 0 ? (
+            {loadingLogs ? (
+              <div className="flex items-center justify-center gap-2 p-12 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="text-xs">Carregando histórico...</span>
+              </div>
+            ) : logs.length === 0 ? (
               <div className="flex flex-col items-center gap-2 p-12 text-center text-muted-foreground">
                 <Terminal className="h-8 w-8 opacity-20" />
                 <span className="text-xs">Nenhuma execução registrada ainda.</span>

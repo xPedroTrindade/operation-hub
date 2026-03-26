@@ -142,6 +142,39 @@ export type Database = {
           }
         ]
       }
+      logs: {
+        Row: {
+          id: string
+          modulo: string
+          execucao_id: string | null
+          tipo: string
+          mensagem: string
+          detalhe: string | null
+          usuario_id: string | null
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          modulo: string
+          execucao_id?: string | null
+          tipo: string
+          mensagem: string
+          detalhe?: string | null
+          usuario_id?: string | null
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          modulo?: string
+          execucao_id?: string | null
+          tipo?: string
+          mensagem?: string
+          detalhe?: string | null
+          usuario_id?: string | null
+          criado_em?: string
+        }
+        Relationships: []
+      }
       configuracoes_gerais: {
         Row: {
           created_at: string
@@ -205,6 +238,7 @@ export type Database = {
           email: string | null
           id: string
           nome: string | null
+          role: "admin" | "user"
           updated_at: string
           user_id: string
         }
@@ -213,6 +247,7 @@ export type Database = {
           email?: string | null
           id?: string
           nome?: string | null
+          role?: "admin" | "user"
           updated_at?: string
           user_id: string
         }
@@ -221,6 +256,7 @@ export type Database = {
           email?: string | null
           id?: string
           nome?: string | null
+          role?: "admin" | "user"
           updated_at?: string
           user_id?: string
         }

@@ -29,6 +29,7 @@ const toolItems = [
 
 const cadastroItems = [
   { label: "Clientes", icon: Building2, href: "/clientes" },
+  { label: "Usuários", icon: Users, href: "/usuarios" },
 ];
 
 const systemItems = [

@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 # ======================================================
-# UTIL — NORMALIZAR TEXTO
+# UTIL – NORMALIZAR TEXTO
 # ======================================================
 def normalizar(texto):
     if not texto:
@@ -19,8 +19,9 @@ def normalizar(texto):
 
 
 # ======================================================
-# UTIL — NORMALIZAR HORA PARA HH:MM
+# UTIL – NORMALIZAR HORA PARA HH:MM
 # Aceita: "12:05", "12:05:00", "9:5", "09:05:00", etc.
+# Retorna sempre: "HH:MM"
 # ======================================================
 def normalizar_hora(hora: str) -> str:
     if not hora:
@@ -54,11 +55,12 @@ def executar_fluxo_completo(lista_os: list):
             grupos[os_data["empresa"]].append(os_data)
 
         with sync_playwright() as p:
+
             context = p.chromium.launch_persistent_context(
                 user_data_dir=str(Path(__file__).resolve().parents[2] / "runtime" / "sankhya_profile"),
                 headless=False,
                 args=["--start-maximized"],
-                no_viewport=True,
+                no_viewport=True
             )
 
             page = context.new_page()
@@ -66,13 +68,13 @@ def executar_fluxo_completo(lista_os: list):
 
             for empresa, lista_empresa in grupos.items():
 
-                print(f"\n🏷️ PROCESSANDO EMPRESA: {empresa}", flush=True)
+                print(f"\n🔷 PROCESSANDO EMPRESA: {empresa}", flush=True)
 
                 try:
                     page.goto(lista_empresa[0]["experience_url_etapas"], timeout=60000)
                     page.wait_for_selector("text=Gestão do Projeto", timeout=30000)
                 except Exception as e_nav:
-                    print(f"✗ Falha ao abrir empresa {empresa}", flush=True)
+                    print(f"❌ Falha ao abrir empresa {empresa}", flush=True)
                     for os_data in lista_empresa:
                         erros.append({**os_data, "motivo": f"Falha ao navegar para a página da empresa {empresa}: {str(e_nav)}"})
                     continue
@@ -88,7 +90,7 @@ def executar_fluxo_completo(lista_os: list):
                                 f"| Empresa: {os_data.get('empresa')} "
                                 f"| Usuário: {os_data.get('usuario')} "
                                 f"| OS: {os_data.get('ticket')}",
-                                flush=True,
+                                flush=True
                             )
                         else:
                             erros.append(erro_info)
@@ -97,11 +99,11 @@ def executar_fluxo_completo(lista_os: list):
                                 f"| Empresa: {os_data.get('empresa')} "
                                 f"| Usuário: {os_data.get('usuario')} "
                                 f"| OS: {os_data.get('ticket')}",
-                                flush=True,
+                                flush=True
                             )
 
                     except Exception as e:
-                        print(f"✗ ERRO inesperado na OS {os_data.get('ticket')}: {e}", flush=True)
+                        print(f"❌ ERRO inesperado na OS {os_data.get('ticket')}: {e}", flush=True)
                         traceback.print_exc()
                         erros.append({**os_data, "motivo": f"Erro inesperado: {str(e)}"})
 
@@ -112,42 +114,42 @@ def executar_fluxo_completo(lista_os: list):
         traceback.print_exc()
 
     except Exception as e:
-        print("✗ ERRO CRÍTICO NA AUTOMAÇÃO:", str(e), flush=True)
+        print("❌ ERRO CRÍTICO NA AUTOMAÇÃO:", str(e), flush=True)
         traceback.print_exc()
 
     finally:
         print("\n==================================================", flush=True)
-        print("📋 RELATÓRIO FINAL DA EXECUÇÃO", flush=True)
+        print("📊 RELATÓRIO FINAL DA EXECUÇÃO", flush=True)
         print("==================================================", flush=True)
 
-        print(f"✓ Total Sucesso: {len(sucessos)}", flush=True)
-        print(f"✗ Total Falha: {len(erros)}", flush=True)
+        print(f"✔ Total Sucesso: {len(sucessos)}", flush=True)
+        print(f"❌ Total Falha: {len(erros)}", flush=True)
 
         if sucessos:
             print("\n🟢 LINHAS QUE SERÃO ATUALIZADAS NA PLANILHA:", flush=True)
             for item in sucessos:
                 print(
-                    f"   ✓ Linha {item.get('linha_id')} | "
+                    f"   ➜ Linha {item.get('linha_id')} | "
                     f"Empresa: {item.get('empresa')} | "
                     f"OS: {item.get('ticket')}",
-                    flush=True,
+                    flush=True
                 )
 
         if erros:
             print("\n🔴 LINHAS COM FALHA:", flush=True)
             for erro in erros:
                 print(
-                    f"   ✗ Linha {erro.get('linha_id')} | "
+                    f"   ➜ Linha {erro.get('linha_id')} | "
                     f"Empresa: {erro.get('empresa')} | "
                     f"OS: {erro.get('ticket')}",
-                    flush=True,
+                    flush=True
                 )
 
         print("\n🏁 Execução finalizada.\n", flush=True)
 
     return {
         "sucesso": sucessos,
-        "falha": erros,
+        "falha": erros
     }
 
 
@@ -156,7 +158,7 @@ def executar_fluxo_completo(lista_os: list):
 # ======================================================
 def executar_os(page, os_data: dict):
 
-    print(f"\n⚡️ Lançando OS: {os_data['ticket']} (Linha {os_data.get('linha_id')})", flush=True)
+    print(f"\n➡️ Lançando OS: {os_data['ticket']} (Linha {os_data.get('linha_id')})", flush=True)
 
     page.wait_for_selector("text=Gestão do Projeto", timeout=20000)
 
@@ -191,7 +193,7 @@ def executar_os(page, os_data: dict):
                 opcao_escolhida = opcoes.nth(i)
 
     if not opcao_escolhida:
-        print("✗ Nenhum código encontrado.", flush=True)
+        print("❌ Nenhum código encontrado.", flush=True)
         page.locator("#cancelar-button").click()
         return False, {**os_data, "motivo": "Nenhum código de pedido encontrado para a empresa"}
 
@@ -209,7 +211,7 @@ def executar_os(page, os_data: dict):
     try:
         page.wait_for_selector("li[role='option']", state="visible", timeout=10000)
     except Exception:
-        print("✗ Lista de usuários não carregou.", flush=True)
+        print("❌ Lista de usuários não carregou.", flush=True)
         page.locator("#cancelar-button").click()
         return False, {**os_data, "motivo": f"Lista de usuários não carregou ao buscar '{os_data['usuario']}' na empresa {os_data.get('empresa', '')}"}
 
@@ -217,7 +219,7 @@ def executar_os(page, os_data: dict):
     total_opcoes = opcoes_usuario.count()
 
     if total_opcoes == 0:
-        print("✗ Nenhum usuário retornado.", flush=True)
+        print("❌ Nenhum usuário retornado.", flush=True)
         page.locator("#cancelar-button").click()
         return False, {**os_data, "motivo": f"Nenhum usuário retornado ao buscar '{os_data['usuario']}' na empresa {os_data.get('empresa', '')}"}
 
@@ -247,7 +249,7 @@ def executar_os(page, os_data: dict):
     minimo = 1 if len(palavras_planilha) == 1 else 2
 
     if not melhor_match or melhor_score < minimo:
-        print(f"✗ Usuário não encontrado: {os_data['usuario']}", flush=True)
+        print(f"❌ Usuário não encontrado: {os_data['usuario']}", flush=True)
         page.locator("#cancelar-button").click()
         return False, {**os_data, "motivo": f"Usuário '{os_data['usuario']}' não encontrado na empresa {os_data.get('empresa', '')} (verifique o nome no Painel Admin)"}
 
@@ -286,6 +288,6 @@ def executar_os(page, os_data: dict):
     page.locator("button.swal2-confirm").wait_for(timeout=15000)
     page.locator("button.swal2-confirm").click()
 
-    print(f"✓ OS {os_data['ticket']} concluída com sucesso.", flush=True)
+    print(f"✅ OS {os_data['ticket']} concluída com sucesso.", flush=True)
 
     return True, None

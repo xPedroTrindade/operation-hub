@@ -20,6 +20,7 @@ from googleapiclient.discovery import build
 from core.auth import create_session, get_session_user, register_user, authenticate_user, revoke_session
 from core.automacao.saldoh import extrair_saldo_fap, extrair_saldo_fap_multiplo
 from core.automacao.sankhya import executar_fluxo_completo
+from routers import clientes, status_report, modelos, usuarios, configuracoes
 
 
 def _preload_sheets():
@@ -58,6 +59,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── Routers ────────────────────────────────────────────────────────────────────
+app.include_router(clientes.router)
+app.include_router(status_report.router)
+app.include_router(modelos.router)
+app.include_router(usuarios.router)
+app.include_router(configuracoes.router)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -510,66 +518,6 @@ def listar_os(aba: str | None = None, current_user: dict = Depends(require_auth)
             "origem": "empty_fallback",
             "warning": "Nao foi possivel consultar a planilha agora. Tente novamente em instantes.",
         }
-
-
-@app.get("/clientes")
-def listar_clientes_endpoint(current_user: dict = Depends(require_auth)):
-    return ler_clientes()
-
-
-@app.post("/clientes")
-def salvar_cliente_endpoint(cliente: dict = Body(...), current_user: dict = Depends(require_auth)):
-    empresa = cliente.get("empresa", "").strip()
-    if not empresa:
-        raise HTTPException(status_code=400, detail="Campo 'empresa' obrigatorio")
-
-    url_etapas = cliente.get("experience_url_etapas", "")
-    url_pedidos = url_etapas.replace("screen=etapas", "screen=pedidos")
-
-    novo_cliente = {
-        "empresa": empresa,
-        "experience_url_etapas": url_etapas,
-        "experience_url_pedidos": url_pedidos,
-        "ativo": cliente.get("ativo", True),
-    }
-
-    dados = ler_clientes()
-    existente = next(
-        (c for c in dados["clientes"] if c["empresa"].upper() == empresa.upper()),
-        None,
-    )
-
-    if existente:
-        existente.update(novo_cliente)
-        logger.info("Cliente atualizado: %s", empresa)
-    else:
-        dados["clientes"].append(novo_cliente)
-        logger.info("Novo cliente cadastrado: %s", empresa)
-
-    salvar_clientes(dados)
-
-    return {
-        "status": "ok",
-        "empresa": empresa,
-        "experience_url_etapas": url_etapas,
-        "experience_url_pedidos": url_pedidos,
-    }
-
-
-@app.patch("/clientes/{empresa}")
-def toggle_cliente(empresa: str, body: dict = Body(...), current_user: dict = Depends(require_auth)):
-    dados = ler_clientes()
-    cliente = next(
-        (c for c in dados["clientes"] if c["empresa"].upper() == empresa.upper()),
-        None,
-    )
-
-    if not cliente:
-        raise HTTPException(status_code=404, detail="Empresa nao encontrada")
-
-    cliente["ativo"] = body.get("ativo", not cliente.get("ativo", True))
-    salvar_clientes(dados)
-    return {"status": "ok", "empresa": empresa, "ativo": cliente["ativo"]}
 
 
 @app.get("/saldo/{empresa}")

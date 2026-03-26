@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Building2, Plus, Search, Pencil, Trash2, Loader2,
   CheckCircle2, XCircle, Users, UserCheck, UserX, X,
+  LayoutGrid, FileText, ChevronLeft, ChevronRight,
+  CalendarDays, Lock, User, Eye, EyeOff, Save, Bot, Clock, Link2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,12 +15,36 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+
+// ── Definição dos links por funcionalidade ────────────────────────────────────
+const LINK_DEFS = [
+  {
+    campo:     "url_abertura_os" as const,
+    titulo:    "Abertura de OS",
+    descricao: "URL usada pelo robô Python para abrir ordens de serviço na FAP",
+    icon:      Bot,
+    cor:       "text-primary bg-primary/10 border-primary/20",
+    corIcon:   "text-primary",
+  },
+  {
+    campo:     "url_saldo_horas" as const,
+    titulo:    "Consulta de Saldo de Horas",
+    descricao: "URL usada pela tela Saldo de Horas para consultar o saldo do cliente",
+    icon:      Clock,
+    cor:       "text-blue-700 bg-blue/8 border-blue/20",
+    corIcon:   "text-blue-600",
+  },
+] as const;
+
+type CampoLink = typeof LINK_DEFS[number]["campo"];
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface Cliente {
@@ -30,7 +56,26 @@ interface Cliente {
   atualizado_em: string;
 }
 
+interface ConfigCliente {
+  id?: string;
+  cliente_id: string;
+  exp_usuario: string;
+  exp_senha: string;
+  url_abertura_os: string;
+  url_saldo_horas: string;
+  obs: string;
+}
+
+const CONFIG_VAZIA: Omit<ConfigCliente, "cliente_id"> = {
+  exp_usuario: "",
+  exp_senha: "",
+  url_abertura_os: "",
+  url_saldo_horas: "",
+  obs: "",
+};
+
 type FiltroStatus = "todos" | "ativos" | "inativos";
+type Modo = "grade" | "formulario";
 
 // ── Utilitários ───────────────────────────────────────────────────────────────
 function mascaraCNPJ(v: string): string {
@@ -312,6 +357,308 @@ function DialogExcluir({
   );
 }
 
+// ── Painel Formulário ─────────────────────────────────────────────────────────
+function PainelFormulario({
+  cliente,
+  index,
+  total,
+  configAtual,
+  onAnterior,
+  onProximo,
+  onToggleStatus,
+  onSalvoConfig,
+}: {
+  cliente: Cliente;
+  index: number;
+  total: number;
+  configAtual: ConfigCliente | null;
+  onAnterior: () => void;
+  onProximo: () => void;
+  onToggleStatus: (c: Cliente) => void;
+  onSalvoConfig: (clienteId: string, cfg: ConfigCliente) => void;
+}) {
+  const { toast } = useToast();
+
+  // Config form state
+  const [form, setForm] = useState<Omit<ConfigCliente, "cliente_id">>(CONFIG_VAZIA);
+  const [showSenha, setShowSenha] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+
+  // Sync form when client or config changes
+  useEffect(() => {
+    setShowSenha(false);
+    setForm(
+      configAtual
+        ? {
+            exp_usuario:     configAtual.exp_usuario,
+            exp_senha:       configAtual.exp_senha,
+            url_abertura_os: configAtual.url_abertura_os,
+            url_saldo_horas: configAtual.url_saldo_horas,
+            obs:             configAtual.obs,
+          }
+        : { ...CONFIG_VAZIA }
+    );
+  }, [cliente.id, configAtual]);
+
+  const setF = <K extends keyof typeof form>(k: K, v: string) =>
+    setForm((p) => ({ ...p, [k]: v }));
+
+  async function handleSalvarConfig() {
+    setSalvando(true);
+    try {
+      const payload: ConfigCliente = {
+        cliente_id:      cliente.id,
+        exp_usuario:     form.exp_usuario.trim(),
+        exp_senha:       form.exp_senha,
+        url_abertura_os: form.url_abertura_os.trim(),
+        url_saldo_horas: form.url_saldo_horas.trim(),
+        obs:             form.obs.trim(),
+      };
+
+      const { error } = await supabase
+        .from("configuracoes_clientes")
+        .upsert(payload, { onConflict: "cliente_id" });
+
+      if (error) throw error;
+
+      toast({ title: "Configurações salvas", description: `${cliente.nome} atualizado com sucesso.` });
+      onSalvoConfig(cliente.id, payload);
+    } catch (err: any) {
+      toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
+    }
+    setSalvando(false);
+  }
+
+  return (
+    <motion.div
+      key={cliente.id}
+      initial={{ opacity: 0, x: 16 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -16 }}
+      transition={{ duration: 0.2 }}
+      className="bg-card border border-border rounded-xl overflow-hidden shadow-[var(--shadow-sm)]"
+    >
+      {/* Cabeçalho */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-muted/20">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
+            <Building2 className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="font-semibold text-sm text-foreground">{cliente.nome}</p>
+            <p className="text-[11px] text-muted-foreground font-mono">{cliente.cnpj || "Sem CNPJ"}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-muted-foreground font-mono">{index + 1} / {total}</span>
+          <button
+            onClick={onAnterior}
+            disabled={index === 0}
+            className="p-1.5 rounded-lg border border-border hover:bg-muted/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={onProximo}
+            disabled={index === total - 1}
+            className="p-1.5 rounded-lg border border-border hover:bg-muted/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Sub-abas */}
+      <Tabs defaultValue="identificacao" className="w-full">
+        <div className="border-b border-border px-5">
+          <TabsList className="h-10 bg-transparent gap-0 p-0 rounded-none">
+            <TabsTrigger
+              value="identificacao"
+              className="h-10 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[12px] px-4 gap-1.5"
+            >
+              <User className="h-3.5 w-3.5" />
+              Identificação
+            </TabsTrigger>
+            <TabsTrigger
+              value="configuracoes"
+              className="h-10 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none text-[12px] px-4 gap-1.5"
+            >
+              <Lock className="h-3.5 w-3.5" />
+              Configurações
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        {/* Tab: Identificação */}
+        <TabsContent value="identificacao" className="p-5 m-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Razão Social</label>
+              <div className="flex items-center gap-2 p-2.5 bg-background border border-border rounded-lg">
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-sm text-foreground">{cliente.nome}</span>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">CNPJ</label>
+              <div className="flex items-center gap-2 p-2.5 bg-background border border-border rounded-lg">
+                <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-sm font-mono text-foreground">{cliente.cnpj || "—"}</span>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Cadastrado em</label>
+              <div className="flex items-center gap-2 p-2.5 bg-background border border-border rounded-lg">
+                <CalendarDays className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-sm text-foreground">{formatarData(cliente.criado_em)}</span>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Status</label>
+              <div className="flex items-center justify-between gap-2 p-2.5 bg-background border border-border rounded-lg">
+                <div className="flex items-center gap-2">
+                  {cliente.ativo
+                    ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                    : <XCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                  <span className={`text-sm ${cliente.ativo ? "text-green-700 font-medium" : "text-muted-foreground"}`}>
+                    {cliente.ativo ? "Ativo" : "Inativo"}
+                  </span>
+                </div>
+                <Switch
+                  checked={cliente.ativo}
+                  onCheckedChange={() => onToggleStatus(cliente)}
+                />
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Tab: Configurações */}
+        <TabsContent value="configuracoes" className="p-5 m-0 space-y-5">
+          {/* Credenciais de acesso */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Credenciais de Acesso
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <User className="h-3 w-3" /> Usuário
+                </Label>
+                <Input
+                  value={form.exp_usuario}
+                  onChange={(e) => setF("exp_usuario", e.target.value)}
+                  placeholder="login@empresa.com"
+                  className="bg-background border-border text-[13px]"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <Lock className="h-3 w-3" /> Senha
+                </Label>
+                <div className="relative">
+                  <Input
+                    type={showSenha ? "text" : "password"}
+                    value={form.exp_senha}
+                    onChange={(e) => setF("exp_senha", e.target.value)}
+                    placeholder="••••••••"
+                    className="pr-9 bg-background border-border text-[13px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSenha((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showSenha ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator className="bg-border" />
+
+          {/* Links por funcionalidade */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Links por Funcionalidade
+              </p>
+            </div>
+            <div className="space-y-3">
+              {LINK_DEFS.map((def) => {
+                const Icon = def.icon;
+                const val = form[def.campo as CampoLink];
+                const preenchido = !!val.trim();
+
+                return (
+                  <div
+                    key={def.campo}
+                    className={`rounded-xl border p-4 transition-colors ${
+                      preenchido ? "border-border bg-background" : "border-dashed border-border/60 bg-muted/20"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${def.cor}`}>
+                        <Icon className={`h-4 w-4 ${def.corIcon}`} />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-[13px] font-semibold text-foreground leading-tight">{def.titulo}</p>
+                            <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">{def.descricao}</p>
+                          </div>
+                          {preenchido && <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />}
+                        </div>
+                        <Input
+                          value={val}
+                          onChange={(e) => setF(def.campo as CampoLink, e.target.value)}
+                          placeholder="https://..."
+                          className="bg-card border-border text-[12px] font-mono h-8"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <Separator className="bg-border" />
+
+          {/* Observações */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Observações</p>
+            </div>
+            <textarea
+              value={form.obs}
+              onChange={(e) => setF("obs", e.target.value)}
+              placeholder="Particularidades deste cliente, usuários alternativos, anotações..."
+              rows={2}
+              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary transition-colors"
+            />
+          </div>
+
+          {/* Botão salvar */}
+          <div className="flex justify-end pt-1">
+            <Button onClick={handleSalvarConfig} disabled={salvando} className="gap-2 h-8 text-xs">
+              {salvando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              Salvar configurações
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </motion.div>
+  );
+}
+
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function Clientes() {
   const { toast } = useToast();
@@ -321,22 +668,32 @@ export default function Clientes() {
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>("todos");
 
+  const [modo, setModo] = useState<Modo>("grade");
+  const [indexSelecionado, setIndexSelecionado] = useState(0);
+
+  const [configsClientes, setConfigsClientes] = useState<Record<string, ConfigCliente>>({});
+
   const [dialogAberto, setDialogAberto] = useState(false);
   const [editando, setEditando] = useState<Cliente | null>(null);
   const [excluindo, setExcluindo] = useState<Cliente | null>(null);
 
-  // ── Carregar clientes ──
+  // ── Carregar clientes + configs ──
   const carregar = useCallback(async () => {
     setCarregando(true);
-    const { data, error } = await supabase
-      .from("clientes")
-      .select("*")
-      .order("nome", { ascending: true });
+    const [{ data: clientesData, error: erroClientes }, { data: configsData }] = await Promise.all([
+      supabase.from("clientes").select("*").order("nome", { ascending: true }),
+      supabase.from("configuracoes_clientes").select("*"),
+    ]);
 
-    if (error) {
-      toast({ title: "Erro ao carregar clientes", description: error.message, variant: "destructive" });
+    if (erroClientes) {
+      toast({ title: "Erro ao carregar clientes", description: erroClientes.message, variant: "destructive" });
     } else {
-      setClientes((data as Cliente[]) ?? []);
+      setClientes((clientesData as Cliente[]) ?? []);
+      if (configsData) {
+        const mapa: Record<string, ConfigCliente> = {};
+        for (const c of configsData) mapa[c.cliente_id] = c as ConfigCliente;
+        setConfigsClientes(mapa);
+      }
     }
     setCarregando(false);
   }, [toast]);
@@ -357,12 +714,20 @@ export default function Clientes() {
     return matchBusca && matchStatus;
   });
 
+  const clienteAtual = clientesFiltrados[indexSelecionado] ?? null;
+
   // ── KPIs ──
   const total = clientes.length;
   const ativos = clientes.filter((c) => c.ativo).length;
   const inativos = total - ativos;
 
-  // ── Abrir edição ──
+  // ── Abrir formulário ──
+  function abrirFormulario(i: number) {
+    setIndexSelecionado(i);
+    setModo("formulario");
+  }
+
+  // ── Abrir edição (dialog) ──
   function abrirEdicao(c: Cliente) {
     setEditando(c);
     setDialogAberto(true);
@@ -396,6 +761,11 @@ export default function Clientes() {
     }
   }
 
+  // ── Atualizar config no mapa local (após salvar) ──
+  function atualizarConfigLocal(clienteId: string, cfg: ConfigCliente) {
+    setConfigsClientes((prev) => ({ ...prev, [clienteId]: cfg }));
+  }
+
   const filtrosBotoes: { key: FiltroStatus; label: string }[] = [
     { key: "todos", label: "Todos" },
     { key: "ativos", label: "Ativos" },
@@ -407,21 +777,51 @@ export default function Clientes() {
       title="Clientes"
       subtitle="Cadastro e gestão de clientes"
       headerExtra={
-        <Button
-          onClick={() => { setEditando(null); setDialogAberto(true); }}
-          size="sm"
-          className="gap-2 h-8 text-xs"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Novo Cliente
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Toggle Grade/Formulário */}
+          <div className="flex items-center bg-card border border-border rounded-lg p-0.5 gap-0.5">
+            <button
+              onClick={() => setModo("grade")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
+                modo === "grade"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              Grade
+            </button>
+            <button
+              onClick={() => { if (clientesFiltrados.length > 0) setModo("formulario"); }}
+              disabled={clientesFiltrados.length === 0}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                modo === "formulario"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Formulário
+            </button>
+          </div>
+
+          {/* Novo Cliente */}
+          <Button
+            onClick={() => { setEditando(null); setDialogAberto(true); }}
+            size="sm"
+            className="gap-2 h-8 text-xs"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Novo Cliente
+          </Button>
+        </div>
       }
     >
       {/* ── KPIs ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <KpiCard icon={Users}     label="Total de Clientes" value={total}   color="bg-primary/10 text-primary"         delay={0} />
-        <KpiCard icon={UserCheck} label="Clientes Ativos"   value={ativos}  color="bg-green-500/10 text-green-600"    delay={0.05} />
-        <KpiCard icon={UserX}     label="Clientes Inativos" value={inativos} color="bg-amber/10 text-amber-600"       delay={0.1} />
+        <KpiCard icon={Users}     label="Total de Clientes" value={total}    color="bg-primary/10 text-primary"       delay={0} />
+        <KpiCard icon={UserCheck} label="Clientes Ativos"   value={ativos}   color="bg-green-500/10 text-green-600"  delay={0.05} />
+        <KpiCard icon={UserX}     label="Clientes Inativos" value={inativos} color="bg-amber-500/10 text-amber-600"  delay={0.1} />
       </div>
 
       {/* ── Barra de busca e filtros ── */}
@@ -436,7 +836,7 @@ export default function Clientes() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             value={busca}
-            onChange={(e) => setBusca(e.target.value)}
+            onChange={(e) => { setBusca(e.target.value); setIndexSelecionado(0); }}
             placeholder="Buscar por nome ou CNPJ..."
             className="pl-9 bg-card border-border"
           />
@@ -468,155 +868,189 @@ export default function Clientes() {
         </div>
       </motion.div>
 
-      {/* ── Tabela ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-card border border-border rounded-xl overflow-hidden shadow-[var(--shadow-sm)]"
-      >
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-border bg-muted/30 hover:bg-muted/30">
-                <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pl-5">Razão Social</TableHead>
-                <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">CNPJ</TableHead>
-                <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</TableHead>
-                <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cadastrado em</TableHead>
-                <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right pr-5">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {carregando ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-40 text-center">
-                    <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
-                  </TableCell>
+      {/* ── MODO GRADE ── */}
+      {modo === "grade" && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-card border border-border rounded-xl overflow-hidden shadow-[var(--shadow-sm)]"
+        >
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-border bg-muted/30 hover:bg-muted/30">
+                  <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pl-5">Razão Social</TableHead>
+                  <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">CNPJ</TableHead>
+                  <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</TableHead>
+                  <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cadastrado em</TableHead>
+                  <TableHead className="text-xs font-semibold text-muted-foreground uppercase tracking-wide text-right pr-5">Ações</TableHead>
                 </TableRow>
-              ) : clientesFiltrados.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-40 text-center">
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <Building2 className="h-8 w-8 opacity-30" />
-                      <p className="text-sm font-medium">
-                        {busca || filtroStatus !== "todos"
-                          ? "Nenhum cliente encontrado para este filtro."
-                          : "Nenhum cliente cadastrado ainda."}
-                      </p>
-                      {!busca && filtroStatus === "todos" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-1 border-border"
-                          onClick={() => { setEditando(null); setDialogAberto(true); }}
-                        >
-                          <Plus className="h-3.5 w-3.5 mr-1.5" />
-                          Cadastrar primeiro cliente
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                <AnimatePresence initial={false}>
-                  {clientesFiltrados.map((c, i) => (
-                    <motion.tr
-                      key={c.id}
-                      initial={{ opacity: 0, x: -6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 6 }}
-                      transition={{ delay: i * 0.02 }}
-                      className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
-                    >
-                      {/* Nome */}
-                      <TableCell className="pl-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                            <Building2 className="h-3.5 w-3.5 text-primary" />
+              </TableHeader>
+              <TableBody>
+                {carregando ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-40 text-center">
+                      <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
+                    </TableCell>
+                  </TableRow>
+                ) : clientesFiltrados.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-40 text-center">
+                      <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                        <Building2 className="h-8 w-8 opacity-30" />
+                        <p className="text-sm font-medium">
+                          {busca || filtroStatus !== "todos"
+                            ? "Nenhum cliente encontrado para este filtro."
+                            : "Nenhum cliente cadastrado ainda."}
+                        </p>
+                        {!busca && filtroStatus === "todos" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-1 border-border"
+                            onClick={() => { setEditando(null); setDialogAberto(true); }}
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1.5" />
+                            Cadastrar primeiro cliente
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <AnimatePresence initial={false}>
+                    {clientesFiltrados.map((c, i) => (
+                      <motion.tr
+                        key={c.id}
+                        initial={{ opacity: 0, x: -6 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 6 }}
+                        transition={{ delay: i * 0.02 }}
+                        onClick={() => abrirFormulario(i)}
+                        className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+                      >
+                        {/* Nome */}
+                        <TableCell className="pl-5 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                              <Building2 className="h-3.5 w-3.5 text-primary" />
+                            </div>
+                            <span className="font-medium text-[13px] text-foreground">{c.nome}</span>
                           </div>
-                          <span className="font-medium text-[13px] text-foreground">{c.nome}</span>
-                        </div>
-                      </TableCell>
+                        </TableCell>
 
-                      {/* CNPJ */}
-                      <TableCell className="py-3.5">
-                        <span className="font-mono text-[12px] text-muted-foreground tracking-wide">{c.cnpj}</span>
-                      </TableCell>
+                        {/* CNPJ */}
+                        <TableCell className="py-3.5">
+                          <span className="font-mono text-[12px] text-muted-foreground tracking-wide">{c.cnpj}</span>
+                        </TableCell>
 
-                      {/* Status */}
-                      <TableCell className="py-3.5">
-                        <button
-                          onClick={() => toggleStatus(c)}
-                          className="group focus:outline-none"
-                          title={c.ativo ? "Clique para desativar" : "Clique para ativar"}
-                        >
-                          <Badge
-                            variant={c.ativo ? "default" : "outline"}
-                            className={`gap-1 text-[11px] transition-all cursor-pointer ${
-                              c.ativo
-                                ? "bg-green-500/15 text-green-700 border-green-500/30 hover:bg-green-500/25"
-                                : "text-muted-foreground hover:bg-muted"
-                            }`}
-                          >
-                            {c.ativo
-                              ? <CheckCircle2 className="h-3 w-3" />
-                              : <XCircle className="h-3 w-3" />}
-                            {c.ativo ? "Ativo" : "Inativo"}
-                          </Badge>
-                        </button>
-                      </TableCell>
-
-                      {/* Data */}
-                      <TableCell className="py-3.5">
-                        <span className="text-[12px] text-muted-foreground font-mono">{formatarData(c.criado_em)}</span>
-                      </TableCell>
-
-                      {/* Ações */}
-                      <TableCell className="py-3.5 pr-5">
-                        <div className="flex items-center justify-end gap-1">
+                        {/* Status */}
+                        <TableCell className="py-3.5">
                           <button
-                            onClick={() => abrirEdicao(c)}
-                            className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                            title="Editar cliente"
+                            onClick={(e) => { e.stopPropagation(); toggleStatus(c); }}
+                            className="group focus:outline-none"
+                            title={c.ativo ? "Clique para desativar" : "Clique para ativar"}
                           >
-                            <Pencil className="h-3.5 w-3.5" />
+                            <Badge
+                              variant={c.ativo ? "default" : "outline"}
+                              className={`gap-1 text-[11px] transition-all cursor-pointer ${
+                                c.ativo
+                                  ? "bg-green-500/15 text-green-700 border-green-500/30 hover:bg-green-500/25"
+                                  : "text-muted-foreground hover:bg-muted"
+                              }`}
+                            >
+                              {c.ativo
+                                ? <CheckCircle2 className="h-3 w-3" />
+                                : <XCircle className="h-3 w-3" />}
+                              {c.ativo ? "Ativo" : "Inativo"}
+                            </Badge>
                           </button>
-                          <button
-                            onClick={() => setExcluindo(c)}
-                            className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                            title="Excluir cliente"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </TableCell>
-                    </motion.tr>
-                  ))}
-                </AnimatePresence>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                        </TableCell>
 
-        {/* Rodapé da tabela */}
-        {!carregando && clientesFiltrados.length > 0 && (
-          <div className="px-5 py-2.5 border-t border-border bg-muted/20 flex items-center justify-between">
-            <span className="text-[11px] text-muted-foreground">
-              {clientesFiltrados.length === clientes.length
-                ? `${total} cliente${total !== 1 ? "s" : ""}`
-                : `${clientesFiltrados.length} de ${total} cliente${total !== 1 ? "s" : ""}`}
-            </span>
-            {busca || filtroStatus !== "todos" ? (
-              <button
-                onClick={() => { setBusca(""); setFiltroStatus("todos"); }}
-                className="text-[11px] text-primary hover:underline"
-              >
-                Limpar filtros
-              </button>
-            ) : null}
+                        {/* Data */}
+                        <TableCell className="py-3.5">
+                          <span className="text-[12px] text-muted-foreground font-mono">{formatarData(c.criado_em)}</span>
+                        </TableCell>
+
+                        {/* Ações */}
+                        <TableCell className="py-3.5 pr-5">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); abrirEdicao(c); }}
+                              className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                              title="Editar cliente"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setExcluindo(c); }}
+                              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              title="Excluir cliente"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                )}
+              </TableBody>
+            </Table>
           </div>
-        )}
-      </motion.div>
+
+          {/* Rodapé da tabela */}
+          {!carregando && clientesFiltrados.length > 0 && (
+            <div className="px-5 py-2.5 border-t border-border bg-muted/20 flex items-center justify-between">
+              <span className="text-[11px] text-muted-foreground">
+                {clientesFiltrados.length === clientes.length
+                  ? `${total} cliente${total !== 1 ? "s" : ""}`
+                  : `${clientesFiltrados.length} de ${total} cliente${total !== 1 ? "s" : ""}`}
+                {" · "}clique em uma linha para abrir o formulário
+              </span>
+              {busca || filtroStatus !== "todos" ? (
+                <button
+                  onClick={() => { setBusca(""); setFiltroStatus("todos"); }}
+                  className="text-[11px] text-primary hover:underline"
+                >
+                  Limpar filtros
+                </button>
+              ) : null}
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* ── MODO FORMULÁRIO ── */}
+      {modo === "formulario" && (
+        <>
+          {carregando ? (
+            <div className="flex items-center justify-center h-48">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : clienteAtual ? (
+            <AnimatePresence mode="wait">
+              <PainelFormulario
+                key={clienteAtual.id}
+                cliente={clienteAtual}
+                index={indexSelecionado}
+                total={clientesFiltrados.length}
+                configAtual={configsClientes[clienteAtual.id] ?? null}
+                onAnterior={() => setIndexSelecionado((i) => Math.max(0, i - 1))}
+                onProximo={() => setIndexSelecionado((i) => Math.min(clientesFiltrados.length - 1, i + 1))}
+                onToggleStatus={toggleStatus}
+                onSalvoConfig={atualizarConfigLocal}
+              />
+            </AnimatePresence>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground gap-2">
+              <Building2 className="h-8 w-8 opacity-30" />
+              <p className="text-sm">Nenhum cliente encontrado.</p>
+            </div>
+          )}
+        </>
+      )}
 
       {/* ── Diálogos ── */}
       <DialogCliente
@@ -628,7 +1062,7 @@ export default function Clientes() {
       <DialogExcluir
         cliente={excluindo}
         onClose={() => setExcluindo(null)}
-        onConfirmado={carregar}
+        onConfirmado={() => { carregar(); if (modo === "formulario") setModo("grade"); }}
       />
     </AppLayout>
   );
