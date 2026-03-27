@@ -14,6 +14,9 @@ import Admin from "./pages/Admin";
 import Clientes from "./pages/Clientes";
 import LancamentoOS from "./pages/LancamentoOS";
 import Usuarios from "./pages/Usuarios";
+import Rotinas from "./pages/Rotinas";
+import Envios from "./pages/Envios";
+import ModelosEmail from "./pages/ModelosEmail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +38,9 @@ const App = () => (
             <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
             <Route path="/lancamento-os" element={<ProtectedRoute><LancamentoOS /></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
+            <Route path="/rotinas" element={<ProtectedRoute><Rotinas /></ProtectedRoute>} />
+            <Route path="/envios" element={<ProtectedRoute><Envios /></ProtectedRoute>} />
+            <Route path="/modelos-email" element={<ProtectedRoute><ModelosEmail /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

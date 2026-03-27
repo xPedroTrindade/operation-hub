@@ -262,6 +262,186 @@ export type Database = {
         }
         Relationships: []
       }
+      modelos_email: {
+        Row: {
+          id: number
+          assunto: string
+          corpo: string
+          ativo: boolean
+          criado_em: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: number
+          assunto: string
+          corpo: string
+          ativo?: boolean
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: number
+          assunto?: string
+          corpo?: string
+          ativo?: boolean
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
+      status_report_configs: {
+        Row: {
+          id: string
+          cliente_id: string
+          modelo_id: number | null
+          fap: string | null
+          periodo: string | null
+          dia_envio: number
+          enviar_sem_os: boolean
+          ativo: boolean
+          criado_em: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          cliente_id: string
+          modelo_id?: number | null
+          fap?: string | null
+          periodo?: string | null
+          dia_envio: number
+          enviar_sem_os?: boolean
+          ativo?: boolean
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          cliente_id?: string
+          modelo_id?: number | null
+          fap?: string | null
+          periodo?: string | null
+          dia_envio?: number
+          enviar_sem_os?: boolean
+          ativo?: boolean
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_report_configs_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "status_report_configs_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "modelos_email"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      sr_destinatarios: {
+        Row: {
+          id: string
+          config_id: string
+          email: string
+          ativo: boolean
+        }
+        Insert: {
+          id?: string
+          config_id: string
+          email: string
+          ativo?: boolean
+        }
+        Update: {
+          id?: string
+          config_id?: string
+          email?: string
+          ativo?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sr_destinatarios_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "status_report_configs"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      sr_envios: {
+        Row: {
+          id: string
+          config_id: string
+          status: "enviado" | "erro" | "pendente"
+          enviado_em: string
+          periodo_inicio: string
+          periodo_fim: string
+          erro_msg: string | null
+          pdf_path: string | null
+        }
+        Insert: {
+          id?: string
+          config_id: string
+          status?: "enviado" | "erro" | "pendente"
+          enviado_em?: string
+          periodo_inicio: string
+          periodo_fim: string
+          erro_msg?: string | null
+          pdf_path?: string | null
+        }
+        Update: {
+          id?: string
+          config_id?: string
+          status?: "enviado" | "erro" | "pendente"
+          enviado_em?: string
+          periodo_inicio?: string
+          periodo_fim?: string
+          erro_msg?: string | null
+          pdf_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sr_envios_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "status_report_configs"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      sr_envio_destinatarios: {
+        Row: {
+          id: string
+          envio_id: string
+          email: string
+          status_entrega: "entregue" | "pendente" | "erro"
+        }
+        Insert: {
+          id?: string
+          envio_id: string
+          email: string
+          status_entrega?: "entregue" | "pendente" | "erro"
+        }
+        Update: {
+          id?: string
+          envio_id?: string
+          email?: string
+          status_entrega?: "entregue" | "pendente" | "erro"
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sr_envio_destinatarios_envio_id_fkey"
+            columns: ["envio_id"]
+            isOneToOne: false
+            referencedRelation: "sr_envios"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       user_module_access: {
         Row: {
           created_at: string

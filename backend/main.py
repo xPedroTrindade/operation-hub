@@ -21,6 +21,7 @@ from core.auth import create_session, get_session_user, register_user, authentic
 from core.automacao.saldoh import extrair_saldo_fap, extrair_saldo_fap_multiplo
 from core.automacao.sankhya import executar_fluxo_completo
 from routers import clientes, status_report, modelos, usuarios, configuracoes
+from scheduler import runner as scheduler_runner
 
 
 def _preload_sheets():
@@ -49,7 +50,9 @@ def _preload_sheets():
 async def lifespan(app: FastAPI):
     loop = asyncio.get_event_loop()
     loop.run_in_executor(None, _preload_sheets)
+    scheduler_runner.start()
     yield
+    scheduler_runner.stop()
 
 
 app = FastAPI(lifespan=lifespan)
